@@ -1,6 +1,6 @@
 # FinoraQi v2
 
-A versão 2 da FinoraQi reúne em um só projeto a interface, a API, a inteligência artificial, o machine learning, o processamento de dados e a nova camada CashPool B2B. Ela fica nesta pasta `v2/` e não depende do código da versão 1: o site e os backends originais continuam intactos na raiz do repositório.
+A versão 2 da FinoraQi reúne em um só projeto a interface, a API, a inteligência artificial, o machine learning, o processamento de dados e a nova camada CashPool B2B/B2G. Ela fica nesta pasta `v2/` e não depende do código da versão 1: o site e os backends originais continuam intactos na raiz do repositório.
 
 ## Sumário
 
