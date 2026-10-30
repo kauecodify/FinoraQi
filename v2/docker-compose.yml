@@ -1,0 +1,40 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.11-slim}
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-finoraqi}:${POSTGRES_PASSWORD:-finoraqi}@db:5432/${POSTGRES_DB:-finoraqi}
+      AUTO_CREATE_TABLES: "false"
+      MODELS_DIR: /data/models
+      FRONTEND_DIR: /srv/frontend
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - models_data:/data/models
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: ${POSTGRES_IMAGE:-postgres:16-alpine}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-finoraqi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-finoraqi}
+      POSTGRES_DB: ${POSTGRES_DB:-finoraqi}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  models_data:

@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinoraQi v2 · Plataforma</title>
+<meta name="theme-color" content="#1a1a2e">
+<link rel="icon" href="assets/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cyan: #00d4ff; --purple: #7b2cbf; --violet: #b700ff; --gold: #ffd700; --gold-2: #ffb700;
+  --ink: #1a1a2e; --green: #10b981; --red: #ef4444; --text: #e2e8f0;
+  --surface: rgba(255,255,255,.03); --surface-2: rgba(255,255,255,.06); --line: rgba(255,255,255,.08);
+  --muted: rgba(226,232,240,.62); --grad: linear-gradient(135deg, var(--cyan), var(--purple)); --radius: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--ink); color: var(--text); line-height: 1.55; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+a { color: var(--cyan); text-decoration: none; }
+code, .mono { font-family: 'JetBrains Mono', monospace; }
+button, input, select { font: inherit; color: inherit; }
+.hidden { display: none !important; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; padding: .6rem 1rem; border-radius: 10px; border: 1px solid transparent; font-weight: 600; font-size: .88rem; cursor: pointer; transition: opacity .2s, border-color .2s; }
+.btn:disabled { opacity: .5; cursor: wait; }
+.btn-gold { background: var(--gold); color: var(--ink); }
+.btn-gold:hover { background: var(--gold-2); }
+.btn-ghost { background: transparent; border-color: var(--line); }
+.btn-ghost:hover { border-color: var(--cyan); }
+.btn-sm { padding: .4rem .7rem; font-size: .8rem; }
+
+input, select { width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: .6rem .75rem; outline: none; }
+input:focus, select:focus { border-color: var(--cyan); }
+select option { background: var(--ink); }
+label { display: grid; gap: .3rem; font-size: .8rem; color: var(--muted); }
+
+/* auth */
+.auth { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; background: radial-gradient(600px 300px at 50% 0%, rgba(0,212,255,.08), transparent); }
+.auth-card { width: 100%; max-width: 380px; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 2rem; display: grid; gap: 1rem; }
+.auth-card h1 { font-size: 1.3rem; }
+.auth-card p { color: var(--muted); font-size: .88rem; }
+.tabs { display: flex; gap: .25rem; padding: .25rem; border: 1px solid var(--line); border-radius: 10px; }
+.tabs button { flex: 1; background: none; border: 0; padding: .45rem; border-radius: 8px; cursor: pointer; color: var(--muted); }
+.tabs button[aria-selected="true"] { background: var(--surface-2); color: var(--text); }
+
+/* layout */
+.shell { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
+aside { border-right: 1px solid var(--line); padding: 1.25rem 1rem; display: flex; flex-direction: column; gap: 1.5rem; position: sticky; top: 0; height: 100vh; }
+.brand { display: flex; align-items: center; gap: .6rem; font-weight: 700; color: var(--text); }
+.brand img { width: 28px; height: 28px; }
+.brand small { font-size: .65rem; color: var(--cyan); border: 1px solid rgba(0,212,255,.3); border-radius: 6px; padding: 0 .35rem; }
+nav { display: grid; gap: .15rem; }
+nav a { color: var(--muted); padding: .5rem .7rem; border-radius: 8px; font-size: .88rem; }
+nav a:hover { color: var(--text); }
+nav a.active { color: var(--text); background: var(--surface-2); box-shadow: inset 2px 0 0 var(--cyan); }
+.who { margin-top: auto; font-size: .8rem; color: var(--muted); display: grid; gap: .5rem; }
+main { padding: 2rem clamp(1rem, 3vw, 2.5rem); max-width: 1180px; width: 100%; }
+header.page { display: flex; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+header.page h2 { font-size: 1.5rem; letter-spacing: -.01em; }
+header.page p { color: var(--muted); font-size: .9rem; }
+section.view { display: grid; gap: 1.25rem; }
+
+.grid { display: grid; gap: 1rem; }
+.g4 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.g2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.card { border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 1.25rem; display: grid; gap: .9rem; align-content: start; min-width: 0; }
+.card h3 { font-size: .95rem; font-weight: 600; }
+.card h3 span { color: var(--muted); font-weight: 400; font-size: .8rem; }
+.kpi small { color: var(--muted); font-size: .78rem; }
+.kpi strong { display: block; font-size: 1.45rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.form-row { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); align-items: end; }
+
+table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+th { text-align: left; color: var(--muted); font-weight: 500; font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; }
+th, td { padding: .55rem .4rem; border-bottom: 1px solid var(--line); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', monospace; }
+.table-wrap { overflow-x: auto; }
+.empty { color: var(--muted); font-size: .85rem; padding: .5rem 0; }
+
+.pill { display: inline-block; padding: .1rem .5rem; border-radius: 999px; font-size: .72rem; border: 1px solid var(--line); }
+.pill.ok, .pill.approved, .pill.low, .pill.success, .pill.executed, .pill.settled { color: var(--green); border-color: rgba(16,185,129,.35); }
+.pill.warn, .pill.review, .pill.medium, .pill.warning, .pill.simulated { color: var(--gold); border-color: rgba(255,215,0,.35); }
+.pill.bad, .pill.rejected, .pill.high, .pill.alert { color: var(--red); border-color: rgba(239,68,68,.35); }
+.pill.info { color: var(--cyan); border-color: rgba(0,212,255,.35); }
+
+.insight { display: grid; gap: .2rem; padding: .75rem .9rem; border-radius: 10px; border: 1px solid var(--line); border-left: 2px solid var(--cyan); }
+.insight.alert { border-left-color: var(--red); }
+.insight.warning { border-left-color: var(--gold); }
+.insight.success { border-left-color: var(--green); }
+.insight b { font-size: .86rem; }
+.insight span { font-size: .82rem; color: var(--muted); }
+
+.bars { display: grid; gap: .5rem; }
+.bar { display: grid; grid-template-columns: 110px 1fr 90px; gap: .6rem; align-items: center; font-size: .8rem; }
+.bar i { display: block; height: 6px; border-radius: 6px; background: var(--grad); }
+.bar em { font-style: normal; text-align: right; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+.meter { height: 8px; border-radius: 8px; background: var(--surface-2); overflow: hidden; }
+.meter i { display: block; height: 100%; background: linear-gradient(90deg, var(--green), var(--gold), var(--red)); }
+.big { font-size: 2.4rem; font-weight: 700; letter-spacing: -.02em; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+pre.out { font-family: 'JetBrains Mono', monospace; font-size: .76rem; background: rgba(0,0,0,.2); border: 1px solid var(--line); border-radius: 10px; padding: .8rem; max-height: 280px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+svg.spark { width: 100%; height: 120px; }
+.toggle { display: flex; justify-content: space-between; align-items: center; padding: .6rem 0; border-bottom: 1px solid var(--line); font-size: .86rem; }
+.switch { position: relative; width: 38px; height: 22px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch span { position: absolute; inset: 0; border-radius: 22px; background: var(--surface-2); border: 1px solid var(--line); cursor: pointer; transition: .2s; }
+.switch span::after { content: ''; position: absolute; width: 16px; height: 16px; top: 2px; left: 2px; border-radius: 50%; background: var(--muted); transition: .2s; }
+.switch input:checked + span { background: rgba(0,212,255,.2); border-color: var(--cyan); }
+.switch input:checked + span::after { transform: translateX(16px); background: var(--cyan); }
+
+#toast { position: fixed; right: 1.25rem; bottom: 1.25rem; max-width: 380px; padding: .8rem 1rem; border-radius: 10px; background: #23233a; border: 1px solid var(--line); font-size: .86rem; opacity: 0; transform: translateY(8px); transition: .25s; pointer-events: none; z-index: 10; }
+#toast.show { opacity: 1; transform: none; }
+#toast.error { border-color: rgba(239,68,68,.5); }
+.menu-btn { display: none; }
+
+@media (max-width: 860px) {
+  .shell { grid-template-columns: 1fr; }
+  aside { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: .9rem 1rem; gap: .75rem; border-right: 0; border-bottom: 1px solid var(--line); }
+  nav { display: none; width: 100%; }
+  nav.open { display: grid; }
+  .who { display: none; }
+  .menu-btn { display: inline-flex; margin-left: auto; }
+  .bar { grid-template-columns: 80px 1fr 70px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="auth" id="authView">
+  <form class="auth-card" id="authForm" novalidate>
+    <a class="brand" href="index.html"><img src="assets/img/logo.png" alt="">FinoraQi <small>v2</small></a>
+    <div>
+      <h1 id="authTitle">Entrar na plataforma</h1>
+      <p>Finanças pessoais, risco, score, AutoML e CashPool B2B em um só lugar.</p>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-mode="login">Entrar</button>
+      <button type="button" role="tab" aria-selected="false" data-mode="register">Criar conta</button>
+    </div>
+    <label class="hidden" id="nameField">Nome<input name="nome" autocomplete="name" minlength="2"></label>
+    <label>E-mail<input name="email" type="email" autocomplete="email" required></label>
+    <label>Senha<input name="senha" type="password" autocomplete="current-password" minlength="8" required></label>
+    <button class="btn btn-gold" type="submit" id="authSubmit">Entrar</button>
+    <p class="mono" id="apiStatus" style="font-size:.72rem">Verificando API...</p>
+  </form>
+</div>
+
+<div class="shell hidden" id="appView">
+  <aside>
+    <a class="brand" href="index.html"><img src="assets/img/logo.png" alt="">FinoraQi <small>v2</small></a>
+    <button class="btn btn-ghost btn-sm menu-btn" id="menuBtn" type="button" aria-expanded="false">Menu</button>
+    <nav id="nav">
+      <a href="#overview">Visão geral</a>
+      <a href="#transactions">Transações</a>
+      <a href="#payments">Pagamentos e risco</a>
+      <a href="#score">Score de crédito</a>
+      <a href="#automl">Dados e AutoML</a>
+      <a href="#cashpool">CashPool B2B</a>
+      <a href="#settings">Feature flags</a>
+    </nav>
+    <div class="who">
+      <span id="whoName"></span>
+      <span class="mono" id="whoTenant" style="font-size:.7rem"></span>
+      <button class="btn btn-ghost btn-sm" id="logoutBtn" type="button">Sair</button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- overview -->
+    <section class="view" data-view="overview">
+      <header class="page"><div><h2>Visão geral</h2><p>Resumo financeiro e recomendações geradas pela IA.</p></div>
+        <button class="btn btn-ghost btn-sm" data-action="refresh-overview" type="button">Atualizar</button></header>
+      <div class="grid g4" id="kpis"></div>
+      <div class="grid g2">
+        <div class="card"><h3>Insights <span>IA</span></h3><div class="grid" id="insights"></div></div>
+        <div class="card"><h3>Despesas por categoria</h3><div class="bars" id="catBars"></div></div>
+      </div>
+      <div class="card"><h3>Projeção de saldo <span>30 dias, faixa p10 a p90</span></h3><div id="forecastBox"></div></div>
+    </section>
+
+    <!-- transactions -->
+    <section class="view" data-view="transactions">
+      <header class="page"><div><h2>Transações</h2><p>Sem categoria, a IA classifica a descrição automaticamente.</p></div></header>
+      <form class="card" id="txForm">
+        <div class="form-row">
+          <label>Tipo<select name="type"><option value="expense">Despesa</option><option value="income">Receita</option></select></label>
+          <label>Valor (R$)<input name="amount" type="number" step="0.01" min="0.01" required></label>
+          <label>Descrição<input name="description" placeholder="ex.: uber para o trabalho" maxlength="255"></label>
+          <label>Categoria<select name="category" id="txCategory"><option value="">Automática (IA)</option></select></label>
+          <label>Data<input name="date" type="date" required></label>
+          <button class="btn btn-gold" type="submit">Adicionar</button>
+        </div>
+      </form>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Origem</th><th style="text-align:right">Valor</th><th></th></tr></thead>
+        <tbody id="txBody"></tbody></table></div></div>
+    </section>
+
+    <!-- payments -->
+    <section class="view" data-view="payments">
+      <header class="page"><div><h2>Pagamentos e risco</h2><p>Score de risco de 0 (mínimo) a 1 (máximo), com detecção de anomalia e eventos em tempo real.</p></div>
+        <span class="pill" id="wsState">WebSocket desconectado</span></header>
+      <div class="grid g2">
+        <form class="card" id="payForm">
+          <h3>Simular pagamento</h3>
+          <div class="form-row">
+            <label>Cliente<input name="user_id" value="cliente_demo" required pattern="[A-Za-z0-9_\-.@]+"></label>
+            <label>Valor (R$)<input name="amount" type="number" step="0.01" min="0.01" value="250" required></label>
+            <label>Método<select name="payment_method"><option>pix</option><option>card</option><option>boleto</option><option>transfer</option><option>crypto</option></select></label>
+            <label>Categoria<select name="category"><option>payment</option><option>purchase</option><option>transfer</option><option>withdrawal</option><option>deposit</option></select></label>
+            <label>Confiança do cliente<input name="user_trust" type="number" min="0" max="1" step="0.05" value="0.7"></label>
+          </div>
+          <label>Descrição<input name="description" value="Pagamento de teste" required maxlength="200"></label>
+          <button class="btn btn-gold" type="submit">Processar</button>
+        </form>
+        <div class="card" id="payResult"><h3>Resultado</h3><p class="empty">Processe um pagamento para ver a decisão.</p></div>
+      </div>
+      <div class="card"><h3>Histórico <span>e benchmark do motor</span></h3>
+        <div><button class="btn btn-ghost btn-sm" data-action="benchmark" type="button">Rodar benchmark (10.000 scores)</button> <span class="mono" id="benchOut" style="font-size:.78rem;color:var(--muted)"></span></div>
+        <div class="table-wrap"><table><thead><tr><th>ID</th><th>Cliente</th><th>Status</th><th>Risco</th><th style="text-align:right">Score</th><th style="text-align:right">Valor</th></tr></thead><tbody id="payBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- score -->
+    <section class="view" data-view="score">
+      <header class="page"><div><h2>Score de crédito</h2><p>Modelo logístico que estima a probabilidade de inadimplência e converte para a escala 300 a 900.</p></div></header>
+      <div class="grid g2">
+        <form class="card" id="scoreForm">
+          <h3>Registrar operação</h3>
+          <div class="form-row">
+            <label>CPF<input name="cpf" placeholder="000.000.000-00" required></label>
+            <label>Valor (R$)<input name="amount" type="number" step="0.01" min="0.01" value="500" required></label>
+            <label>Comprometimento de renda<input name="income_ratio" type="number" step="0.05" min="0" max="1" value="0.3"></label>
+            <label>Pagamento<select name="paid_on_time"><option value="true">Em dia</option><option value="false">Em atraso</option></select></label>
+          </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button class="btn btn-gold" type="submit">Registrar</button>
+            <button class="btn btn-ghost" type="button" data-action="score-lookup">Consultar CPF</button>
+          </div>
+        </form>
+        <div class="card" id="scoreResult"><h3>Score</h3><p class="empty">Informe um CPF válido para registrar ou consultar.</p></div>
+      </div>
+    </section>
+
+    <!-- automl -->
+    <section class="view" data-view="automl">
+      <header class="page"><div><h2>Dados e AutoML</h2><p>Envie CSV ou XLSX. O pipeline limpa, perfila e treina vários modelos com validação cruzada.</p></div></header>
+      <div class="card">
+        <div class="form-row">
+          <label>Arquivo<input type="file" id="dataFile" accept=".csv,.xlsx,.xls"></label>
+          <label>Coluna alvo<select id="targetCol"><option value="">Analise o arquivo primeiro</option></select></label>
+          <label>Tipo de problema<select id="problemType"><option value="">Detectar</option><option value="classification">Classificação</option><option value="regression">Regressão</option></select></label>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <button class="btn btn-ghost" type="button" data-action="analyze">Analisar</button>
+          <button class="btn btn-ghost" type="button" data-action="profile">Perfil de dados</button>
+          <button class="btn btn-gold" type="button" data-action="train">Treinar</button>
+          <button class="btn btn-ghost" type="button" data-action="sample-csv">Baixar CSV de exemplo</button>
+        </div>
+      </div>
+      <div class="grid g2">
+        <div class="card"><h3>Resultado</h3><div id="automlOut"><p class="empty">Nenhuma execução ainda.</p></div></div>
+        <div class="card"><h3>Modelos do tenant</h3><div class="table-wrap"><table><thead><tr><th>Modelo</th><th>Tipo</th><th>Alvo</th><th></th></tr></thead><tbody id="modelsBody"></tbody></table></div></div>
+      </div>
+    </section>
+
+    <!-- cashpool -->
+    <section class="view" data-view="cashpool">
+      <header class="page"><div><h2>CashPool B2B</h2><p>Posições consolidadas, sweep para a conta header, netting multilateral e alocação de rendimento.</p></div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap"><select id="poolSelect" style="width:auto"></select><button class="btn btn-gold btn-sm" data-action="demo-pool" type="button">Criar grupo demo</button></div></header>
+      <div class="grid g4" id="poolKpis"></div>
+      <div class="grid g2">
+        <div class="card"><h3>Posições por conta</h3><div class="table-wrap"><table><thead><tr><th>Conta</th><th>Entidade</th><th>Papel</th><th style="text-align:right">Saldo</th></tr></thead><tbody id="posBody"></tbody></table></div></div>
+        <div class="card"><h3>Operações</h3>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" data-action="sweep-dry" type="button">Simular sweep</button>
+            <button class="btn btn-gold btn-sm" data-action="sweep-run" type="button">Executar sweep</button>
+            <button class="btn btn-ghost btn-sm" data-action="netting-dry" type="button">Simular netting</button>
+            <button class="btn btn-gold btn-sm" data-action="netting-run" type="button">Executar netting</button>
+            <button class="btn btn-ghost btn-sm" data-action="yield" type="button">Alocar yield do mês</button>
+          </div>
+          <div id="poolOut"><p class="empty">Selecione ou crie um grupo.</p></div>
+        </div>
+      </div>
+      <div class="card"><h3>Histórico</h3><div id="poolHistory"><p class="empty">Sem operações.</p></div></div>
+    </section>
+
+    <!-- settings -->
+    <section class="view" data-view="settings">
+      <header class="page"><div><h2>Feature flags</h2><p>Liberação gradual por tenant. Somente administradores podem alterar.</p></div></header>
+      <div class="card" id="flagsBox"></div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="assets/api.js"></script>
+<script>
+(function () {
+  'use strict';
+  const F = window.FinoraQi;
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const num = (v, d = 2) => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const today = () => new Date().toISOString().slice(0, 10);
+  const pill = (cls, text) => `<span class="pill ${esc(cls)}">${esc(text ?? cls)}</span>`;
+  const empty = (msg) => `<p class="empty">${esc(msg)}</p>`;
+  let toastTimer;
+
+  function toast(msg, isError) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.className = 'show' + (isError ? ' error' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.className = ''; }, 3800);
+  }
+
+  async function busy(btn, fn) {
+    if (btn) btn.disabled = true;
+    try { return await fn(); } catch (e) { toast(e.message || String(e), true); } finally { if (btn) btn.disabled = false; }
+  }
+
+  /* ---------- auth ---------- */
+  let authMode = 'login';
+  $$('.tabs button').forEach((b) => b.addEventListener('click', () => {
+    authMode = b.dataset.mode;
+    $$('.tabs button').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+    $('#nameField').classList.toggle('hidden', authMode !== 'register');
+    $('#authTitle').textContent = authMode === 'login' ? 'Entrar na plataforma' : 'Criar conta';
+    $('#authSubmit').textContent = authMode === 'login' ? 'Entrar' : 'Criar conta';
+  }));
+
+  $('#authForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    busy($('#authSubmit'), async () => {
+      if (authMode === 'register') await F.auth.register(f.get('nome'), f.get('email'), f.get('senha'));
+      else await F.auth.login(f.get('email'), f.get('senha'));
+      enterApp();
+    });
+  });
+
+  F.health().then((h) => { $('#apiStatus').textContent = `API ${h.version} · ${h.status}`; })
+    .catch(() => { $('#apiStatus').textContent = 'API indisponível. Inicie o backend em v2/backend.'; });
+
+  $('#logoutBtn').addEventListener('click', () => { F.auth.logout(); showAuth(); });
+  window.addEventListener('finoraqi:logout', showAuth);
+  $('#menuBtn').addEventListener('click', () => {
+    const open = $('#nav').classList.toggle('open');
+    $('#menuBtn').setAttribute('aria-expanded', String(open));
+  });
+
+  function showAuth() {
+    closeWs();
+    $('#appView').classList.add('hidden');
+    $('#authView').classList.remove('hidden');
+  }
+
+  function enterApp() {
+    const u = F.session.user;
+    $('#whoName').textContent = u ? `${u.nome} · ${u.role}` : '';
+    $('#whoTenant').textContent = u ? u.tenant_id : '';
+    $('#authView').classList.add('hidden');
+    $('#appView').classList.remove('hidden');
+    route();
+  }
+
+  /* ---------- router ---------- */
+  const loaders = {
+    overview: loadOverview,
+    transactions: loadTransactions,
+    payments: loadPayments,
+    score: () => {},
+    automl: loadModels,
+    cashpool: loadPools,
+    settings: loadFlags
+  };
+
+  function route() {
+    if (!F.session.token) return showAuth();
+    const view = (location.hash || '#overview').slice(1);
+    const name = loaders[view] ? view : 'overview';
+    $$('.view').forEach((v) => v.classList.toggle('hidden', v.dataset.view !== name));
+    $$('nav a').forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + name));
+    $('#nav').classList.remove('open');
+    if (name === 'payments') openWs(); else closeWs();
+    Promise.resolve(loaders[name]()).catch((e) => toast(e.message, true));
+  }
+  window.addEventListener('hashchange', route);
+
+  /* ---------- overview ---------- */
+  async function loadOverview() {
+    const [s, ai] = await Promise.all([F.finance.summary(), F.ai.insights(30)]);
+    $('#kpis').innerHTML = [
+      ['Receitas', brl(s.income)], ['Despesas', brl(s.expense)], ['Saldo', brl(s.balance)],
+      ['Taxa de poupança', (ai.summary.savings_rate * 100).toFixed(1) + '%']
+    ].map(([k, v]) => `<div class="card kpi"><small>${k}</small><strong>${v}</strong></div>`).join('');
+    $('#insights').innerHTML = ai.insights.map((i) => `<div class="insight ${esc(i.level)}"><b>${esc(i.title)}</b><span>${esc(i.message)}</span></div>`).join('') || empty('Sem insights.');
+    const cats = Object.entries(ai.summary.by_category || {}).sort((a, b) => b[1] - a[1]);
+    const max = cats.length ? cats[0][1] : 1;
+    $('#catBars').innerHTML = cats.map(([c, v]) => `<div class="bar"><span>${esc(c)}</span><i style="width:${Math.max(4, (v / max) * 100)}%"></i><em>${brl(v)}</em></div>`).join('') || empty('Registre despesas para ver a distribuição.');
+    $('#forecastBox').innerHTML = ai.forecast ? spark(ai.forecast) : empty('A projeção precisa de transações em pelo menos 3 dias distintos.');
+  }
+
+  function spark(fc) {
+    const all = [...fc.p10, ...fc.p90];
+    const lo = Math.min(...all), hi = Math.max(...all), span = hi - lo || 1, n = fc.p50.length;
+    const x = (i) => (i / Math.max(1, n - 1)) * 600;
+    const y = (v) => 110 - ((v - lo) / span) * 100;
+    const line = (arr) => arr.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+    const band = line(fc.p90) + ' ' + fc.p10.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).reverse().join(' ');
+    return `<svg class="spark" viewBox="0 0 600 120" preserveAspectRatio="none" role="img" aria-label="Projeção de saldo">
+      <polygon points="${band}" fill="rgba(0,212,255,.12)"/>
+      <polyline points="${line(fc.p50)}" fill="none" stroke="#00d4ff" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+      <p class="mono" style="font-size:.78rem;color:var(--muted)">Mediana em ${n} dias: ${brl(fc.p50[n - 1])} · faixa ${brl(fc.p10[n - 1])} a ${brl(fc.p90[n - 1])}</p>`;
+  }
+
+  /* ---------- transactions ---------- */
+  let categoriesLoaded = false;
+  async function loadTransactions() {
+    if (!categoriesLoaded) {
+      const cats = await F.ai.categories();
+      $('#txCategory').insertAdjacentHTML('beforeend', cats.map((c) => `<option>${esc(c)}</option>`).join(''));
+      categoriesLoaded = true;
+    }
+    $('#txForm [name=date]').value ||= today();
+    const txs = await F.finance.transactions();
+    $('#txBody').innerHTML = txs.map((t) => `<tr><td>${esc(t.date)}</td><td>${esc(t.description || '')}</td><td>${esc(t.category)}</td>
+      <td>${pill(t.category_source === 'ai' ? 'info' : '', t.category_source)}</td>
+      <td class="num" style="color:${t.type === 'income' ? 'var(--green)' : 'var(--text)'}">${t.type === 'income' ? '+' : '-'}${brl(t.amount)}</td>
+      <td><button class="btn btn-ghost btn-sm" data-del="${t.id}" type="button">Remover</button></td></tr>`).join('') || `<tr><td colspan="6">${empty('Nenhuma transação.')}</td></tr>`;
+  }
+
+  $('#txForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData(e.target));
+    if (!f.category) delete f.category;
+    if (!f.description) delete f.description;
+    busy($('button[type=submit]', e.target), async () => {
+      const tx = await F.finance.createTransaction(f);
+      toast(`Transação salva em "${tx.category}"${tx.category_source === 'ai' ? ' (IA)' : ''}.`);
+      e.target.reset();
+      $('#txForm [name=date]').value = today();
+      loadTransactions();
+    });
+  });
+  $('#txBody').addEventListener('click', (e) => {
+    const id = e.target.dataset.del;
+    if (id) busy(e.target, async () => { await F.finance.deleteTransaction(id); loadTransactions(); });
+  });
+
+  /* ---------- payments ---------- */
+  let ws;
+  function openWs() {
+    const u = F.session.user;
+    if (!u || ws) return;
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${proto}://${location.host}/api/v1/ws/payments/${encodeURIComponent($('#payForm [name=user_id]').value)}?token=${encodeURIComponent(F.session.token)}`);
+    ws.onopen = () => { $('#wsState').textContent = 'WebSocket conectado'; $('#wsState').className = 'pill ok'; };
+    ws.onclose = () => { $('#wsState').textContent = 'WebSocket desconectado'; $('#wsState').className = 'pill'; ws = null; };
+    ws.onmessage = (m) => {
+      try {
+        const ev = JSON.parse(m.data);
+        if (ev.type === 'payment_processed') toast(`Evento em tempo real: ${ev.data.transaction_id} ${ev.data.status}`);
+      } catch { /* ignore */ }
+    };
+  }
+  function closeWs() { if (ws) { ws.close(); ws = null; } }
+
+  async function loadPayments() {
+    const list = await F.payments.list(20);
+    const items = list.items || list;
+    $('#payBody').innerHTML = items.map((p) => `<tr><td class="mono">${esc(p.transaction_id)}</td><td>${esc(p.user_id)}</td><td>${pill(p.status)}</td><td>${pill(p.risk_level)}</td>
+      <td class="num">${num(p.risk_score, 3)}</td><td class="num">${brl(p.amount)}</td></tr>`).join('') || `<tr><td colspan="6">${empty('Nenhum pagamento.')}</td></tr>`;
+  }
+
+  $('#payForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData(e.target));
+    f.user_trust = Number(f.user_trust);
+    busy($('button[type=submit]', e.target), async () => {
+      const r = await F.payments.process(f);
+      $('#payResult').innerHTML = `<h3>Resultado</h3>
+        <div style="display:flex;gap:.5rem;align-items:center">${pill(r.status)} ${pill(r.risk_level, 'risco ' + r.risk_level)} ${r.is_anomaly ? pill('alert', 'anomalia') : ''}</div>
+        <div class="kpi"><small>Score de risco</small><strong>${num(r.risk_score, 3)}</strong></div>
+        <div class="meter"><i style="width:${(r.risk_score * 100).toFixed(1)}%"></i></div>
+        <div class="grid">${(r.reasons || []).map((x) => `<span class="insight"><span>${esc(x)}</span></span>`).join('')}</div>
+        <p class="mono" style="font-size:.72rem;color:var(--muted)">${esc(r.transaction_id)} · ${num(r.processing_time_ms, 2)} ms</p>`;
+      loadPayments();
+    });
+  });
+
+  /* ---------- score ---------- */
+  function renderScore(s) {
+    $('#scoreResult').innerHTML = `<h3>Score <span>${esc(s.cpf)}</span></h3>
+      <div class="big">${s.score}</div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">${pill(s.score >= 700 ? 'ok' : s.score >= 500 ? 'warn' : 'bad', s.band)}
+      <span class="pill">PD ${(s.probability_of_default * 100).toFixed(1)}%</span></div>
+      <div class="meter"><i style="width:${((s.score - 300) / 6).toFixed(1)}%"></i></div>
+      <table><tr><td>Pagamentos em dia</td><td class="num">${s.on_time_payments}</td></tr><tr><td>Em atraso</td><td class="num">${s.late_payments}</td></tr>
+      <tr><td>Total pago</td><td class="num">${brl(s.total_paid)}</td></tr><tr><td>Operações</td><td class="num">${s.operations}</td></tr></table>`;
+  }
+  $('#scoreForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData(e.target));
+    f.paid_on_time = f.paid_on_time === 'true';
+    f.income_ratio = Number(f.income_ratio);
+    busy($('button[type=submit]', e.target), async () => renderScore(await F.score.operation(f)));
+  });
+
+  /* ---------- automl ---------- */
+  const file = () => {
+    const f = $('#dataFile').files[0];
+    if (!f) throw new Error('Selecione um arquivo CSV ou XLSX.');
+    return f;
+  };
+
+  function sampleCsv() {
+    const rows = ['renda,idade,dividas,atrasos,regiao,aprovado'];
+    let seed = 7;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    for (let i = 0; i < 240; i++) {
+      const renda = Math.round(1500 + rnd() * 12000), idade = Math.round(18 + rnd() * 50);
+      const dividas = Math.round(rnd() * 20000), atrasos = Math.floor(rnd() * 5);
+      const regiao = ['sudeste', 'sul', 'nordeste', 'norte', 'centro-oeste'][Math.floor(rnd() * 5)];
+      const aprovado = renda * 2 - dividas - atrasos * 3000 + (rnd() - 0.5) * 4000 > 0 ? 'sim' : 'nao';
+      rows.push([renda, idade, dividas, atrasos, regiao, aprovado].join(','));
+    }
+    return new File([rows.join('\n')], 'credito_exemplo.csv', { type: 'text/csv' });
+  }
+
+  async function loadModels() {
+    const models = await F.automl.models();
+    $('#modelsBody').innerHTML = models.map((m) => `<tr><td class="mono" style="font-size:.74rem">${esc(m.model_id)}<br><span style="color:var(--muted)">${esc(m.kind)}</span></td>
+      <td>${esc(m.problem_type)}</td><td>${esc(m.target)}</td>
+      <td><a class="btn btn-ghost btn-sm" data-download="${esc(m.model_id)}" href="#automl">Baixar</a></td></tr>`).join('') || `<tr><td colspan="4">${empty('Nenhum modelo treinado.')}</td></tr>`;
+  }
+  $('#modelsBody').addEventListener('click', (e) => {
+    const id = e.target.dataset.download;
+    if (!id) return;
+    e.preventDefault();
+    busy(e.target, async () => {
+      const res = await fetch(`/api/v1/automl/models/${encodeURIComponent(id)}/download`, { headers: { Authorization: `Bearer ${F.session.token}` } });
+      if (!res.ok) throw new Error('Falha no download');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(await res.blob());
+      a.download = `${id}.joblib`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  });
+
+  const automlActions = {
+    'sample-csv': () => {
+      const f = sampleCsv();
+      const dt = new DataTransfer();
+      dt.items.add(f);
+      $('#dataFile').files = dt.files;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(f);
+      a.download = f.name;
+      a.click();
+      toast('CSV de exemplo carregado no campo de arquivo.');
+    },
+    analyze: async () => {
+      const r = await F.automl.analyze(file());
+      const cols = r.profile.columns;
+      const sugg = r.target_suggestions.map((t) => t.column);
+      const last = sugg[sugg.length - 1];
+      $('#targetCol').innerHTML = sugg.map((c) => `<option ${c === last ? 'selected' : ''}>${esc(c)}</option>`).join('');
+      $('#automlOut').innerHTML = `<p style="font-size:.86rem">${r.profile.rows} linhas · ${cols.length} colunas · ${r.report.duplicates_removed ?? 0} duplicatas removidas</p>
+        <table><thead><tr><th>Coluna</th><th>Tipo</th><th>Ausentes</th><th>Únicos</th></tr></thead>
+        <tbody>${cols.map((c) => `<tr><td>${esc(c.name)}</td><td>${esc(c.dtype)}</td><td class="num">${c.missing}</td><td class="num">${c.unique}</td></tr>`).join('')}</tbody></table>`;
+    },
+    profile: async () => {
+      const r = await F.data.profile(file());
+      $('#automlOut').innerHTML = `<pre class="out">${esc(JSON.stringify(r, null, 2))}</pre>`;
+    },
+    train: async () => {
+      const target = $('#targetCol').value;
+      if (!target) throw new Error('Analise o arquivo e escolha a coluna alvo.');
+      const r = await F.automl.train(file(), target, $('#problemType').value);
+      const metric = r.problem_type === 'classification' ? 'accuracy' : 'r2';
+      $('#automlOut').innerHTML = `<div style="display:flex;gap:.5rem;flex-wrap:wrap">${pill('ok', r.best_model)} ${pill('info', r.problem_type)}</div>
+        <table><thead><tr><th>Modelo</th><th style="text-align:right">CV</th><th style="text-align:right">Desvio</th></tr></thead>
+        <tbody>${r.leaderboard.map((l) => `<tr><td>${esc(l.model)}</td><td class="num">${num(l.cv_mean, 4)}</td><td class="num">${num(l.cv_std, 4)}</td></tr>`).join('')}</tbody></table>
+        <p class="mono" style="font-size:.76rem;color:var(--muted)">Holdout ${metric}: ${num(r.holdout[metric], 4)} · ${esc(r.model_id)}</p>`;
+      loadModels();
+    }
+  };
+
+  /* ---------- cashpool ---------- */
+  let pools = [];
+  const poolId = () => {
+    const id = $('#poolSelect').value;
+    if (!id) throw new Error('Crie ou selecione um grupo.');
+    return id;
+  };
+
+  async function loadPools(selectId) {
+    pools = await F.cashpool.pools();
+    const current = selectId || $('#poolSelect').value;
+    $('#poolSelect').innerHTML = pools.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('') || '<option value="">Nenhum grupo</option>';
+    if (current && pools.some((p) => String(p.id) === String(current))) $('#poolSelect').value = current;
+    if (pools.length) await refreshPool();
+    else { $('#poolKpis').innerHTML = ''; $('#posBody').innerHTML = ''; }
+  }
+
+  async function refreshPool() {
+    const id = poolId();
+    const pool = pools.find((p) => String(p.id) === String(id));
+    const [pos, hist] = await Promise.all([F.cashpool.positions(id), F.cashpool.history(id)]);
+    const roles = Object.fromEntries(pool.members.map((m) => [m.account_id, m]));
+    $('#poolKpis').innerHTML = [
+      ['Saldo consolidado', `${num(pos.total_base)} ${pool.base_currency}`], ['Membros', pool.members.length],
+      ['Tipo', pool.pool_type], ['Compliance', pool.compliance_profile]
+    ].map(([k, v]) => `<div class="card kpi"><small>${k}</small><strong>${esc(v)}</strong></div>`).join('');
+    $('#posBody').innerHTML = pos.positions.map((p) => `<tr><td class="mono">${esc(p.account_id)}</td><td>${esc(roles[p.account_id]?.entity_id)}</td>
+      <td>${pill(roles[p.account_id]?.role === 'header' ? 'info' : '', roles[p.account_id]?.role)}</td>
+      <td class="num">${num(p.balance)} ${esc(p.currency)}</td></tr>`).join('');
+    const rows = [
+      ...hist.sweeps.map((s) => `<tr><td>Sweep</td><td class="mono">${esc(s.from)} &rarr; ${esc(s.to)}</td><td>${pill(s.status)}</td><td class="num">${num(s.amount)} ${esc(s.currency)}</td></tr>`),
+      ...hist.netting_cycles.map((c) => `<tr><td>Netting</td><td>${esc(c.cycle_date)} · ${esc(c.mode)}</td><td>${pill('ok', '-' + c.savings_pct + '%')}</td><td class="num">${num(c.gross_volume)} &rarr; ${num(c.net_volume)}</td></tr>`),
+      ...hist.yield_accruals.map((y) => `<tr><td>Yield</td><td>${esc(y.period_start)} a ${esc(y.period_end)} · membro ${y.member_id}</td><td></td><td class="num">${num(y.accrued)} ${esc(y.currency)}</td></tr>`)
+    ];
+    $('#poolHistory').innerHTML = rows.length ? `<div class="table-wrap"><table><thead><tr><th>Tipo</th><th>Detalhe</th><th>Status</th><th style="text-align:right">Valor</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>` : empty('Sem operações.');
+  }
+  $('#poolSelect').addEventListener('change', () => refreshPool().catch((e) => toast(e.message, true)));
+
+  async function createDemoPool() {
+    const stamp = new Date().toISOString().slice(0, 19);
+    const pool = await F.cashpool.create({
+      name: `Grupo Demo ${new Date().toLocaleTimeString('pt-BR')}`,
+      pool_type: 'physical', base_currency: 'BRL', compliance_profile: 'BR',
+      netting_policy: { mode: 'multilateral' }, yield_policy: { method: 'pro_rata' },
+      members: [
+        { entity_id: 'Header US', account_id: 'US-001', currency: 'BRL', role: 'header' },
+        { entity_id: 'Part. BR', account_id: 'BR-001', currency: 'BRL' },
+        { entity_id: 'Part. MX', account_id: 'MX-001', currency: 'BRL', min_balance: '5000' }
+      ]
+    });
+    await F.cashpool.importPositions(pool.id, [
+      { account_id: 'US-001', balance: '200000', as_of: stamp },
+      { account_id: 'BR-001', balance: '85000', as_of: stamp },
+      { account_id: 'MX-001', balance: '42000', as_of: stamp }
+    ]);
+    const due = today();
+    await F.cashpool.obligations(pool.id, [
+      { payer_account_id: 'BR-001', payee_account_id: 'MX-001', amount: '120000', currency: 'BRL', due_date: due },
+      { payer_account_id: 'MX-001', payee_account_id: 'US-001', amount: '90000', currency: 'BRL', due_date: due },
+      { payer_account_id: 'US-001', payee_account_id: 'BR-001', amount: '100000', currency: 'BRL', due_date: due },
+      { payer_account_id: 'MX-001', payee_account_id: 'BR-001', amount: '40000', currency: 'BRL', due_date: due }
+    ]);
+    toast('Grupo demo criado com 3 entidades e 4 obrigações intercompany.');
+    await loadPools(pool.id);
+  }
+
+  function renderNetting(r) {
+    return `<div class="grid g4" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi"><small>Bruto</small><strong>${num(r.gross_volume, 0)}</strong></div>
+      <div class="kpi"><small>Líquido</small><strong>${num(r.net_volume, 0)}</strong></div>
+      <div class="kpi"><small>Economia</small><strong style="color:var(--green)">${esc(r.savings_pct)}%</strong></div></div>
+      <p style="font-size:.84rem;color:var(--muted)">${r.obligations} obrigações viraram ${r.transfers_net} transferências${r.dry_run ? ' (simulação)' : ''}.</p>
+      <table><tbody>${(r.settlements || []).map((s) => `<tr><td class="mono">${esc(s.payer_account_id)} &rarr; ${esc(s.payee_account_id)}</td><td class="num">${num(s.amount)} ${esc(s.currency)}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  function renderSweep(r) {
+    if (!r.count) return empty('Nenhum sweep necessário: todas as contas já estão no alvo.');
+    return `<table><tbody>${r.instructions.map((i) => `<tr><td class="mono">${esc(i.from_account_id)} &rarr; ${esc(i.to_account_id)}</td><td>${pill(i.status)}</td>
+      <td>${(i.tax_flags || []).map((t) => pill('warn', t)).join(' ')}</td><td class="num">${num(i.amount)} ${esc(i.currency)}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  const poolActions = {
+    'demo-pool': createDemoPool,
+    'sweep-dry': async () => { $('#poolOut').innerHTML = renderSweep(await F.cashpool.sweep(poolId(), true)); },
+    'sweep-run': async () => { $('#poolOut').innerHTML = renderSweep(await F.cashpool.sweep(poolId(), false)); await refreshPool(); },
+    'netting-dry': async () => { $('#poolOut').innerHTML = renderNetting(await F.cashpool.netting(poolId(), today(), true)); },
+    'netting-run': async () => { $('#poolOut').innerHTML = renderNetting(await F.cashpool.netting(poolId(), today(), false)); await refreshPool(); },
+    yield: async () => {
+      const d = new Date();
+      const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+      const r = await F.cashpool.yieldAlloc(poolId(), { period_start: start, period_end: today(), pool_yield: '1500.00' });
+      $('#poolOut').innerHTML = `<p style="font-size:.84rem;color:var(--muted)">R$ 1.500,00 distribuídos por ${esc(r.method)} sobre o saldo médio ponderado no tempo (TWAB).</p>
+        <table><thead><tr><th>Conta</th><th style="text-align:right">TWAB</th><th style="text-align:right">Rendimento</th></tr></thead>
+        <tbody>${r.allocations.map((a) => `<tr><td class="mono">${esc(a.account_id)}</td><td class="num">${num(a.twab)}</td><td class="num">${num(a.accrued)}</td></tr>`).join('')}</tbody></table>`;
+      await refreshPool();
+    }
+  };
+
+  /* ---------- flags ---------- */
+  async function loadFlags() {
+    const flags = await F.flags.list();
+    const admin = F.session.user?.role === 'admin';
+    $('#flagsBox').innerHTML = Object.entries(flags).map(([k, v]) => `<div class="toggle"><span class="mono">${esc(k)}</span>
+      <label class="switch"><input type="checkbox" data-flag="${esc(k)}" ${v ? 'checked' : ''} ${admin ? '' : 'disabled'}><span></span></label></div>`).join('');
+  }
+  $('#flagsBox').addEventListener('change', (e) => {
+    const k = e.target.dataset.flag;
+    if (k) busy(null, async () => { await F.flags.set(k, e.target.checked); toast(`${k}: ${e.target.checked ? 'ativada' : 'desativada'}`); loadFlags(); });
+  });
+
+  /* ---------- action dispatch ---------- */
+  const actions = {
+    ...automlActions,
+    ...poolActions,
+    'refresh-overview': loadOverview,
+    benchmark: async () => {
+      const r = await F.payments.benchmark(10000);
+      $('#benchOut').textContent = `${num(r.throughput_per_s, 0)} scores/s · Numba ${r.numba_available ? 'ativo' : 'indisponível'} (${num(r.numba_ms, 1)} ms) · NumPy ${num(r.numpy_ms, 1)} ms`;
+    },
+    'score-lookup': async () => renderScore(await F.score.get($('#scoreForm [name=cpf]').value))
+  };
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (btn && actions[btn.dataset.action]) busy(btn, actions[btn.dataset.action]);
+  });
+
+  if (F.session.token) enterApp(); else showAuth();
+})();
+</script>
+</body>
+</html>
