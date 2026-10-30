@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinoraQi® — v2</title>
+<meta name="description" content="FinoraQi v2: CRM de gastos, API de score em tempo real e CashPool B2B para grupos econômicos.">
+<meta name="theme-color" content="#1a1a2e">
+<link rel="icon" href="assets/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --cyan: #00d4ff;
+  --purple: #7b2cbf;
+  --violet: #b700ff;
+  --gold: #ffd700;
+  --gold-2: #ffb700;
+  --ink: #1a1a2e;
+  --green: #10b981;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --white: #ffffff;
+
+  --bg: var(--ink);
+  --surface: rgba(255, 255, 255, 0.03);
+  --surface-2: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.08);
+  --muted: rgba(226, 232, 240, 0.62);
+  --grad: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+  --radius: 14px;
+  --max: 1120px;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 6px; }
+
+.container { width: min(var(--max), 100% - 3rem); margin-inline: auto; }
+section { padding: 7rem 0; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: .5rem;
+  font-size: .75rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--cyan);
+}
+.eyebrow::before { content: ''; width: 18px; height: 1px; background: currentColor; }
+.section-head { max-width: 640px; margin-bottom: 3.5rem; }
+.section-head h2 {
+  font-size: clamp(1.9rem, 3.4vw, 2.6rem); font-weight: 700; line-height: 1.15;
+  letter-spacing: -.02em; color: var(--white); margin: .9rem 0 .8rem;
+}
+.section-head p { color: var(--muted); font-size: 1.05rem; }
+.grad-text { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  height: 46px; padding: 0 1.4rem; border-radius: 999px;
+  font-weight: 600; font-size: .95rem; white-space: nowrap;
+  transition: transform .2s var(--ease), background .2s, border-color .2s, box-shadow .2s;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn-gold { background: var(--gold); color: var(--ink); }
+.btn-gold:hover { background: var(--gold-2); box-shadow: 0 8px 24px -8px rgba(255, 215, 0, .55); }
+.btn-ghost { border: 1px solid var(--line); color: var(--white); }
+.btn-ghost:hover { border-color: rgba(0, 212, 255, .5); background: rgba(0, 212, 255, .06); }
+.btn-sm { height: 38px; padding: 0 1.1rem; font-size: .88rem; }
+.arrow { transition: transform .2s var(--ease); }
+.btn:hover .arrow { transform: translateX(3px); }
+
+/* Header */
+header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(26, 26, 46, .72);
+  backdrop-filter: saturate(160%) blur(14px); -webkit-backdrop-filter: saturate(160%) blur(14px);
+  border-bottom: 1px solid transparent; transition: border-color .3s;
+}
+header.scrolled { border-bottom-color: var(--line); }
+.nav { height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 2rem; }
+.brand { display: flex; align-items: center; gap: .65rem; font-weight: 700; font-size: 1.15rem; color: var(--white); }
+.brand img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.brand b { font-weight: 700; }
+.brand b span { color: var(--violet); }
+.version { font-size: .65rem; font-weight: 600; padding: .15rem .45rem; border-radius: 6px; border: 1px solid rgba(0, 212, 255, .35); color: var(--cyan); letter-spacing: .04em; }
+.nav-links { display: flex; align-items: center; gap: 2rem; font-size: .92rem; }
+.nav-links a { color: var(--muted); transition: color .2s; position: relative; }
+.nav-links a:hover, .nav-links a.active { color: var(--white); }
+.nav-links .new::after {
+  content: 'novo'; position: absolute; top: -9px; right: -26px;
+  font-size: .58rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gold);
+}
+.nav-cta { display: flex; align-items: center; gap: .75rem; }
+.menu-btn { display: none; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); align-items: center; justify-content: center; }
+.menu-btn span, .menu-btn span::before, .menu-btn span::after { display: block; width: 16px; height: 1.5px; background: var(--white); position: relative; transition: transform .25s, opacity .25s; }
+.menu-btn span::before, .menu-btn span::after { content: ''; position: absolute; left: 0; }
+.menu-btn span::before { top: -5px; } .menu-btn span::after { top: 5px; }
+.menu-open .menu-btn span { background: transparent; }
+.menu-open .menu-btn span::before { transform: translateY(5px) rotate(45deg); }
+.menu-open .menu-btn span::after { transform: translateY(-5px) rotate(-45deg); }
+
+/* Hero */
+.hero { position: relative; padding: 8rem 0 6rem; text-align: center; isolation: isolate; }
+.hero::before {
+  content: ''; position: absolute; inset: -10% 0 auto; height: 620px; z-index: -1;
+  background:
+    radial-gradient(40% 50% at 30% 30%, rgba(0, 212, 255, .22), transparent 70%),
+    radial-gradient(40% 50% at 70% 40%, rgba(123, 44, 191, .32), transparent 70%);
+  filter: blur(20px);
+}
+.hero::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; opacity: .5;
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at 50% 30%, #000 10%, transparent 65%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 10%, transparent 65%);
+}
+.pill {
+  display: inline-flex; align-items: center; gap: .6rem;
+  padding: .35rem .45rem .35rem .45rem; padding-right: 1rem; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--line); font-size: .85rem; color: var(--text);
+  transition: border-color .2s;
+}
+.pill:hover { border-color: rgba(255, 215, 0, .45); }
+.pill b { background: var(--gold); color: var(--ink); font-size: .7rem; padding: .15rem .55rem; border-radius: 999px; letter-spacing: .04em; }
+.hero h1 {
+  font-size: clamp(2.6rem, 6.4vw, 4.6rem); font-weight: 700; line-height: 1.04; letter-spacing: -.035em;
+  color: var(--white); margin: 1.8rem auto 1.4rem; max-width: 880px;
+}
+.hero p.lead { color: var(--muted); font-size: clamp(1.02rem, 1.6vw, 1.2rem); max-width: 600px; margin: 0 auto 2.4rem; }
+.hero-actions { display: flex; gap: .8rem; justify-content: center; flex-wrap: wrap; }
+.hero-meta {
+  display: grid; grid-template-columns: repeat(4, 1fr); max-width: 760px; margin: 5rem auto 0;
+  border-top: 1px solid var(--line); padding-top: 2rem;
+}
+.hero-meta div { padding: 0 1rem; }
+.hero-meta div + div { border-left: 1px solid var(--line); }
+.hero-meta strong { display: block; font-size: 1.6rem; font-weight: 700; color: var(--white); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.hero-meta span { font-size: .82rem; color: var(--muted); }
+
+/* Products */
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 1.75rem; display: flex; flex-direction: column;
+  transition: border-color .25s, transform .25s var(--ease), background .25s;
+}
+.card:hover { border-color: rgba(0, 212, 255, .3); background: var(--surface-2); transform: translateY(-3px); }
+.card.featured { border-color: rgba(255, 215, 0, .35); background: linear-gradient(180deg, rgba(255, 215, 0, .05), transparent 60%), var(--surface); }
+.card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.4rem; }
+.icon { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--line); color: var(--cyan); }
+.icon svg { width: 20px; height: 20px; }
+.featured .icon { color: var(--gold); }
+.tag { font-size: .68rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: .2rem .55rem; border-radius: 6px; }
+.tag-green { color: var(--green); background: rgba(16, 185, 129, .1); }
+.tag-gold { color: var(--gold); background: rgba(255, 215, 0, .1); }
+.card h3 { font-size: 1.08rem; color: var(--white); font-weight: 600; margin-bottom: .35rem; }
+.card > p { color: var(--muted); font-size: .9rem; margin-bottom: 1.4rem; }
+.list { list-style: none; display: grid; gap: .6rem; font-size: .88rem; margin-bottom: 1.8rem; }
+.list li { display: flex; gap: .6rem; align-items: flex-start; color: var(--text); }
+.list li::before {
+  content: ''; flex: none; width: 14px; height: 14px; margin-top: .3rem; border-radius: 50%;
+  background: rgba(16, 185, 129, .15) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/9px no-repeat;
+}
+.price { margin-top: auto; padding-top: 1.2rem; border-top: 1px solid var(--line); display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.price strong { font-size: 1.35rem; color: var(--white); font-weight: 700; letter-spacing: -.02em; }
+.price small { color: var(--muted); font-size: .8rem; }
+.card-link { margin-top: 1rem; font-size: .88rem; font-weight: 600; color: var(--cyan); display: inline-flex; gap: .35rem; align-items: center; }
+.card-link:hover .arrow { transform: translateX(3px); }
+.featured .card-link { color: var(--gold); }
+
+/* CashPool */
+.cashpool { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: linear-gradient(180deg, rgba(123, 44, 191, .06), transparent 40%); }
+.split { display: grid; grid-template-columns: 1fr 1.05fr; gap: 4rem; align-items: center; }
+.benefits { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6rem 2rem; margin-top: 2.5rem; }
+.benefit h4 { font-size: .95rem; color: var(--white); font-weight: 600; margin-bottom: .25rem; display: flex; gap: .5rem; align-items: center; }
+.benefit h4::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--grad); }
+.benefit p { font-size: .88rem; color: var(--muted); }
+
+.panel { background: rgba(10, 10, 24, .55); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--line); gap: 1rem; }
+.panel-title { font-size: .85rem; color: var(--muted); display: flex; align-items: center; gap: .5rem; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(16, 185, 129, .15); }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); }
+.seg button { padding: .35rem .85rem; border-radius: 999px; font-size: .78rem; font-weight: 600; color: var(--muted); transition: background .2s, color .2s; }
+.seg button[aria-pressed="true"] { background: var(--white); color: var(--ink); }
+.panel-body { padding: 1.5rem 1.25rem 1.25rem; }
+.flow { width: 100%; height: auto; display: block; }
+.flow .node rect { fill: rgba(255, 255, 255, .04); stroke: rgba(255, 255, 255, .14); }
+.flow .node.header rect { stroke: rgba(255, 215, 0, .55); fill: rgba(255, 215, 0, .05); }
+.flow text { font-family: 'Inter', sans-serif; fill: var(--text); }
+.flow .lbl { font-size: 12px; font-weight: 600; fill: var(--white); }
+.flow .sub { font-size: 10px; fill: rgba(226, 232, 240, .55); }
+.flow .edge { fill: none; stroke-width: 1.5; transition: opacity .4s, stroke-dashoffset .8s var(--ease); }
+.flow .edge-label { font-size: 10px; font-family: 'JetBrains Mono', monospace; transition: opacity .4s; }
+.flow .gross { stroke: rgba(239, 68, 68, .7); }
+.flow .net { stroke: var(--green); }
+.flow .gross-label { fill: #fca5a5; }
+.flow .net-label { fill: #6ee7b7; }
+.flow [data-mode] { opacity: 0; }
+.mode-gross .flow [data-mode="gross"], .mode-net .flow [data-mode="net"] { opacity: 1; }
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+.stats-row div { padding: 1rem 1.25rem; }
+.stats-row div + div { border-left: 1px solid var(--line); }
+.stats-row small { display: block; font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.stats-row strong { font-size: 1.15rem; color: var(--white); font-variant-numeric: tabular-nums; font-weight: 600; }
+.stats-row .good { color: var(--green); }
+
+.engines { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-top: 5rem; }
+.engine { background: var(--bg); padding: 1.4rem 1.2rem; transition: background .2s; }
+.engine:hover { background: #1f1f37; }
+.engine code { font-family: 'JetBrains Mono', monospace; font-size: .72rem; color: var(--cyan); }
+.engine h4 { color: var(--white); font-size: .95rem; font-weight: 600; margin: .5rem 0 .3rem; }
+.engine p { font-size: .8rem; color: var(--muted); line-height: 1.5; }
+
+.roadmap { margin-top: 5rem; }
+.roadmap-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.roadmap-head h3 { color: var(--white); font-size: 1.15rem; font-weight: 600; }
+.roadmap-head span { color: var(--muted); font-size: .88rem; }
+.phases { display: grid; grid-template-columns: repeat(8, 1fr); gap: .5rem; list-style: none; counter-reset: phase; }
+.phases li { counter-increment: phase; position: relative; padding-top: 1.1rem; font-size: .8rem; color: var(--muted); line-height: 1.45; }
+.phases li::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 3px; background: var(--surface-2); }
+.phases li:nth-child(-n+2)::before { background: var(--grad); }
+.phases li b { display: block; color: var(--white); font-size: .78rem; font-weight: 600; margin-bottom: .2rem; }
+.phases li b::before { content: 'F' counter(phase) ' · '; color: var(--cyan); font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+
+/* API */
+.api-wrap { display: grid; grid-template-columns: .9fr 1.1fr; gap: 4rem; align-items: start; }
+.api-points { display: grid; gap: .5rem; }
+.api-point { text-align: left; padding: 1.1rem 1.2rem; border-radius: 12px; border: 1px solid transparent; transition: background .2s, border-color .2s; }
+.api-point:hover { background: var(--surface); }
+.api-point[aria-selected="true"] { background: var(--surface-2); border-color: var(--line); }
+.api-point h4 { color: var(--white); font-size: 1rem; font-weight: 600; margin-bottom: .2rem; display: flex; align-items: center; gap: .6rem; }
+.api-point h4 i { font-style: normal; font-family: 'JetBrains Mono', monospace; font-size: .7rem; color: var(--muted); }
+.api-point[aria-selected="true"] h4 i { color: var(--cyan); }
+.api-point p { color: var(--muted); font-size: .88rem; }
+.code { background: #11111f; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.code-bar { display: flex; align-items: center; justify-content: space-between; padding: .8rem 1rem; border-bottom: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: .75rem; color: var(--muted); }
+.code-bar .lights { display: flex; gap: 6px; }
+.code-bar .lights i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, .12); }
+.copy { font-size: .72rem; padding: .25rem .6rem; border-radius: 6px; border: 1px solid var(--line); transition: color .2s, border-color .2s; }
+.copy:hover { color: var(--white); border-color: rgba(255, 255, 255, .25); }
+pre { margin: 0; padding: 1.4rem 1.25rem; font-family: 'JetBrains Mono', monospace; font-size: .84rem; line-height: 1.75; color: var(--text); overflow-x: auto; min-height: 220px; }
+.k { color: var(--violet); } .s { color: var(--green); } .n { color: var(--gold); } .m { color: var(--cyan); } .c { color: rgba(226, 232, 240, .4); }
+
+/* CTA */
+.cta {
+  position: relative; overflow: hidden; border-radius: 24px; padding: 4rem 3rem; text-align: center;
+  background: var(--grad); color: var(--white);
+}
+.cta::after { content: ''; position: absolute; inset: 0; background: radial-gradient(60% 80% at 50% 0%, rgba(255, 255, 255, .18), transparent 70%); pointer-events: none; }
+.cta > * { position: relative; z-index: 1; }
+.cta h2 { font-size: clamp(1.8rem, 3.6vw, 2.6rem); letter-spacing: -.02em; line-height: 1.15; margin-bottom: .8rem; }
+.cta p { opacity: .85; margin-bottom: 2rem; }
+.cta-actions { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
+.cta .btn-ghost { border-color: rgba(255, 255, 255, .45); }
+.cta .btn-ghost:hover { background: rgba(255, 255, 255, .12); border-color: var(--white); }
+.cta-points { display: flex; gap: 1.6rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem; font-size: .85rem; opacity: .85; }
+.cta-points span::before { content: '✓'; margin-right: .4rem; color: var(--gold); font-weight: 700; }
+
+/* About */
+.about { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+.about p { color: var(--muted); margin-bottom: 1rem; }
+.about-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.about-stats div { background: var(--bg); padding: 2rem 1.5rem; }
+.about-stats strong { display: block; font-size: 2.2rem; font-weight: 700; letter-spacing: -.03em; color: var(--white); font-variant-numeric: tabular-nums; }
+.about-stats span { color: var(--muted); font-size: .88rem; }
+
+/* Partners */
+.partners { padding: 4rem 0 6rem; }
+.partners p { text-align: center; color: var(--muted); font-size: .85rem; margin-bottom: 2rem; }
+.marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+.marquee-track { display: flex; gap: 1rem; width: max-content; animation: scroll 40s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+.marquee img { height: 64px; width: 148px; padding: 14px 22px; object-fit: contain; background: var(--white); border-radius: 12px; filter: grayscale(1); opacity: .45; transition: opacity .25s, filter .25s; }
+.marquee img:hover { opacity: .95; filter: none; }
+@keyframes scroll { to { transform: translateX(-50%); } }
+
+/* Footer */
+footer { border-top: 1px solid var(--line); padding: 4rem 0 2rem; font-size: .88rem; }
+.foot { display: grid; grid-template-columns: 1.6fr repeat(3, 1fr); gap: 2rem; }
+.foot p { color: var(--muted); max-width: 320px; margin-top: 1rem; }
+.foot h5 { color: var(--white); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 1rem; }
+.foot ul { list-style: none; display: grid; gap: .55rem; }
+.foot a { color: var(--muted); transition: color .2s; }
+.foot a:hover { color: var(--white); }
+.foot-bottom { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; color: var(--muted); font-size: .8rem; }
+.socials { display: flex; gap: .5rem; margin-top: 1.2rem; }
+.socials a { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); display: grid; place-items: center; color: var(--muted); transition: color .2s, border-color .2s; }
+.socials a:hover { color: var(--white); border-color: rgba(0, 212, 255, .45); }
+.socials svg { width: 16px; height: 16px; }
+
+/* Reveal */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .engines { grid-template-columns: repeat(3, 1fr); }
+  .phases { grid-template-columns: repeat(4, 1fr); row-gap: 1.5rem; }
+  .split, .api-wrap, .about { grid-template-columns: 1fr; gap: 3rem; }
+}
+@media (max-width: 820px) {
+  .nav-links {
+    position: fixed; inset: 68px 0 auto; flex-direction: column; align-items: flex-start; gap: 0;
+    background: var(--bg); border-bottom: 1px solid var(--line); padding: .5rem 1.5rem 1.5rem;
+    transform: translateY(-8px); opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+  }
+  .nav-links a { width: 100%; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: 1rem; }
+  .nav-links .new::after { position: static; margin-left: .5rem; }
+  .menu-open .nav-links { opacity: 1; transform: none; pointer-events: auto; }
+  .menu-btn { display: inline-flex; }
+  .nav-cta .btn-ghost { display: none; }
+  section { padding: 5rem 0; }
+  .hero { padding: 5rem 0 4rem; }
+  .hero-meta { grid-template-columns: repeat(2, 1fr); row-gap: 1.5rem; }
+  .hero-meta div:nth-child(3) { border-left: 0; }
+  .foot { grid-template-columns: 1fr 1fr; }
+  .foot > div:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+  .grid-4, .benefits { grid-template-columns: 1fr; }
+  .engines { grid-template-columns: repeat(2, 1fr); }
+  .phases { grid-template-columns: repeat(2, 1fr); }
+  .cta { padding: 3rem 1.5rem; }
+  .stats-row strong { font-size: 1rem; }
+  .hero-actions .btn { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .reveal { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+
+<header id="top">
+  <div class="container nav">
+    <a href="#inicio" class="brand" aria-label="FinoraQi, início">
+      <img src="assets/img/logo.png" alt="" width="32" height="32">
+      <b>Finora<span>Qi</span></b>
+      <em class="version">v2</em>
+    </a>
+    <nav class="nav-links" id="navLinks" aria-label="Principal">
+      <a href="#produtos">Produtos</a>
+      <a href="#cashpool" class="new">CashPool</a>
+      <a href="#api">API</a>
+      <a href="app.html#automl">RatingPlus</a>
+      <a href="#sobre">Sobre</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="app.html#score" class="btn btn-ghost btn-sm">Simular score</a>
+      <a href="app.html" class="btn btn-gold btn-sm">Começar</a>
+      <button class="menu-btn" id="menuBtn" aria-label="Abrir menu" aria-expanded="false" aria-controls="navLinks"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Hero -->
+  <section class="hero" id="inicio">
+    <div class="container">
+      <a href="#cashpool" class="pill reveal"><b>NOVO</b> CashPool B2B para grupos econômicos <span class="arrow">→</span></a>
+      <h1 class="reveal">Planejamento de gastos <span class="grad-text">e lucros</span>, em tempo real.</h1>
+      <p class="lead reveal">CRM de gastos com alertas inteligentes, API de crédito instantâneo para construção de score e, agora, tesouraria consolidada para empresas.</p>
+      <div class="hero-actions reveal">
+        <a href="#produtos" class="btn btn-gold">Conhecer produtos <span class="arrow">→</span></a>
+        <a href="#api" class="btn btn-ghost">Ver API</a>
+      </div>
+      <div class="hero-meta reveal">
+        <div><strong data-count="10000" data-suffix="K+">0</strong><span>Usuários ativos</span></div>
+        <div><strong data-count="50000" data-suffix="K+">0</strong><span>Operações</span></div>
+        <div><strong>5 ms</strong><span>Atualização de score</span></div>
+        <div><strong>24/7</strong><span>Suporte</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Produtos -->
+  <section id="produtos">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Produtos</span>
+        <h2>Uma plataforma, do bolso à tesouraria.</h2>
+        <p>Escolha a ferramenta certa para transformar a sua relação — ou a da sua empresa — com o dinheiro.</p>
+      </div>
+
+      <div class="grid-4">
+        <article class="card reveal">
+          <div class="card-top">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></div>
+            <span class="tag tag-green">Grátis</span>
+          </div>
+          <h3>FinoraQi CRM</h3>
+          <p>Controle pessoal de gastos com alertas.</p>
+          <ul class="list">
+            <li>Limites de gastos personalizáveis</li>
+            <li>Dashboard em tempo real</li>
+            <li>Acompanhamento das finanças</li>
+          </ul>
+          <div class="price"><strong>R$ 0</strong><small>para sempre</small></div>
+          <a href="app.html" class="card-link">Testar agora <span class="arrow">→</span></a>
+        </article>
+
+        <article class="card reveal">
+          <div class="card-top">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></div>
+          </div>
+          <h3>CRM Enterprise</h3>
+          <p>Controle total dos seus projetos.</p>
+          <ul class="list">
+            <li>Alertas diários de rentabilidade</li>
+            <li>Categorização automática</li>
+            <li>Relatórios mensais de economia</li>
+          </ul>
+          <div class="price"><strong>Trial</strong><small>por mês</small></div>
+          <a href="app.html#cashpool" class="card-link">Teste empresarial <span class="arrow">→</span></a>
+        </article>
+
+        <article class="card reveal">
+          <div class="card-top">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+          </div>
+          <h3>FinoraQi API</h3>
+          <p>Construção de score em tempo real.</p>
+          <ul class="list">
+            <li>Atualização Serasa/SPC instantânea</li>
+            <li>API RESTful documentada</li>
+            <li>Webhook de confirmação</li>
+          </ul>
+          <div class="price"><strong>0,20%</strong><small>por transação</small></div>
+          <a href="#api" class="card-link">Ver endpoints <span class="arrow">→</span></a>
+        </article>
+
+        <article class="card featured reveal">
+          <div class="card-top">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5 6.5 17M12 11.5l5.5 5.5"/></svg></div>
+            <span class="tag tag-gold">Novo</span>
+          </div>
+          <h3>CashPool B2B</h3>
+          <p>Tesouraria consolidada para grupos.</p>
+          <ul class="list">
+            <li>Sweep, netting e FX automáticos</li>
+            <li>Forecast de liquidez com ML</li>
+            <li>Compliance por jurisdição</li>
+          </ul>
+          <div class="price"><strong>Sob consulta</strong><small>B2B</small></div>
+          <a href="#cashpool" class="card-link">Conhecer <span class="arrow">→</span></a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- CashPool -->
+  <section class="cashpool" id="cashpool">
+    <div class="container">
+      <div class="split">
+        <div class="reveal">
+          <span class="eyebrow">Novo na v2 · CashPool</span>
+          <div class="section-head" style="margin-bottom:0">
+            <h2>Todo o caixa do grupo, <span class="grad-text">trabalhando junto.</span></h2>
+            <p>Holding e subsidiárias agregam suas posições de caixa. O FinoraQi orquestra varreduras, compensação entre entidades, câmbio e rendimento — sem tomar crédito externo.</p>
+          </div>
+          <div class="benefits">
+            <div class="benefit"><h4>Zero ociosidade</h4><p>Saldos parados viram liquidez para o grupo.</p></div>
+            <div class="benefit"><h4>Compensação interna</h4><p>O excedente de uma empresa cobre o déficit de outra.</p></div>
+            <div class="benefit"><h4>Menos juros</h4><p>Reduza empréstimos e melhore o rendimento das aplicações.</p></div>
+            <div class="benefit"><h4>Netting multilateral</h4><p>Menos transferências brutas entre entidades.</p></div>
+          </div>
+        </div>
+
+        <div class="panel mode-gross reveal" id="nettingPanel">
+          <div class="panel-head">
+            <span class="panel-title"><i class="dot"></i>Ciclo de netting · Grupo Demo</span>
+            <div class="seg" role="group" aria-label="Modo de visualização">
+              <button type="button" data-set="gross" aria-pressed="true">Bruto</button>
+              <button type="button" data-set="net" aria-pressed="false">Netting</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <svg class="flow" viewBox="0 0 440 260" role="img" aria-labelledby="flowTitle">
+              <title id="flowTitle">Fluxos intercompany entre Brasil, México e Estados Unidos, antes e depois do netting</title>
+              <defs>
+                <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="rgba(239,68,68,.8)"/></marker>
+                <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#10b981"/></marker>
+              </defs>
+
+              <!-- gross flows -->
+              <g data-mode="gross">
+                <path class="edge gross" d="M150 70 Q220 40 290 70" marker-end="url(#ar)"/>
+                <text class="edge-label gross-label" x="220" y="44" text-anchor="middle">BRL→MXN 120k</text>
+                <path class="edge gross" d="M300 100 Q290 160 260 190" marker-end="url(#ar)"/>
+                <text class="edge-label gross-label" x="318" y="160">90k</text>
+                <path class="edge gross" d="M180 195 Q140 160 130 105" marker-end="url(#ar)"/>
+                <text class="edge-label gross-label" x="104" y="160" text-anchor="end">100k</text>
+                <path class="edge gross" d="M290 92 Q220 120 150 92" marker-end="url(#ar)"/>
+                <text class="edge-label gross-label" x="220" y="122" text-anchor="middle">40k</text>
+              </g>
+
+              <!-- net flows -->
+              <g data-mode="net">
+                <path class="edge net" d="M290 92 Q220 120 150 92" marker-end="url(#ag)"/>
+                <text class="edge-label net-label" x="220" y="122" text-anchor="middle">10k</text>
+                <path class="edge net" d="M180 195 Q140 160 130 105" marker-end="url(#ag)"/>
+                <text class="edge-label net-label" x="104" y="160" text-anchor="end">10k</text>
+              </g>
+
+              <g class="node"><rect x="50" y="56" width="100" height="48" rx="10"/><text class="lbl" x="100" y="77" text-anchor="middle">Part. BR</text><text class="sub" x="100" y="93" text-anchor="middle">BRL</text></g>
+              <g class="node"><rect x="290" y="56" width="100" height="48" rx="10"/><text class="lbl" x="340" y="77" text-anchor="middle">Part. MX</text><text class="sub" x="340" y="93" text-anchor="middle">MXN</text></g>
+              <g class="node header"><rect x="170" y="186" width="100" height="48" rx="10"/><text class="lbl" x="220" y="207" text-anchor="middle">Header US</text><text class="sub" x="220" y="223" text-anchor="middle">GBP;RUP;EUR;CNY, ...</text></g>
+            </svg>
+          </div>
+          <div class="stats-row">
+            <div><small>Transferências</small><strong id="stTransfers">4</strong></div>
+            <div><small>Volume</small><strong id="stVolume">350k</strong></div>
+            <div><small>Economia</small><strong id="stSaving">—</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="engines">
+        <div class="engine reveal"><code>sweep.py</code><h4>Sweep</h4><p>Zero, target e threshold balance por membro.</p></div>
+        <div class="engine reveal"><code>netting.py</code><h4>Netting</h4><p>Compensação bilateral ou multilateral por ciclo.</p></div>
+        <div class="engine reveal"><code>fx.py</code><h4>FX</h4><p>Pool multimoeda com taxa travada por janela.</p></div>
+        <div class="engine reveal"><code>yield_alloc.py</code><h4>Yield</h4><p>Rendimento pro-rata por TWAB, tiered ou contrato.</p></div>
+        <div class="engine reveal"><code>forecast.py</code><h4>Forecast</h4><p>Liquidez prevista com o motor ML do FinoraQi.</p></div>
+        <div class="engine reveal"><code>compliance.py</code><h4>Compliance</h4><p>Regras plugáveis por país: BR, EU e US.</p></div>
+      </div>
+
+      <div class="roadmap reveal">
+        <div class="roadmap-head">
+          <h3>Roadmap de implementação</h3>
+          <span>8 fases · ~20 semanas até produção</span>
+        </div>
+        <ol class="phases">
+          <li><b>Base</b>Modelos, migration e CRUD de pools</li>
+          <li><b>Sweep</b>Motor zero/fixed + PaymentRail</li>
+          <li><b>Netting</b>Multilateral + dashboard de ciclo</li>
+          <li><b>FX</b>Pool multimoeda + CompositeFX</li>
+          <li><b>Yield</b>Alocação + TWAB persistido</li>
+          <li><b>Forecast</b>LiquidityForecaster no ML</li>
+          <li><b>Compliance</b>BR, EU, US + relatórios fiscais</li>
+          <li><b>White-label</b>Feature flags + testes E2E</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- API -->
+  <section id="api">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Para desenvolvedores</span>
+        <h2>Uma API simples para decisões em milissegundos.</h2>
+        <p>Construção de score em tempo real para jovens e idosos, e endpoints B2B de tesouraria.</p>
+      </div>
+      <div class="api-wrap">
+        <div class="api-points reveal" role="tablist" aria-label="Exemplos de API">
+          <button class="api-point" role="tab" aria-selected="true" data-snippet="0"><h4>Atualização instantânea <i>POST</i></h4><p>Pagamento confirmado, score atualizado no Serasa e SPC em até 5 ms.</p></button>
+          <button class="api-point" role="tab" aria-selected="false" data-snippet="1"><h4>Foco em inclusão <i>GET</i></h4><p>Histórico de crédito para jovens de áreas de risco, construído rapidamente.</p></button>
+          <button class="api-point" role="tab" aria-selected="false" data-snippet="2"><h4>Segurança total <i>AUTH</i></h4><p>Criptografia ponta a ponta, conformidade com a LGPD e padrão bancário.</p></button>
+          <button class="api-point" role="tab" aria-selected="false" data-snippet="3"><h4>CashPool <i>B2B</i></h4><p>Netting e sweep protegidos por feature flag, com isolamento por tenant.</p></button>
+        </div>
+        <div class="code reveal">
+          <div class="code-bar">
+            <span class="lights"><i></i><i></i><i></i></span>
+            <span id="codeFile">credit-operation.http</span>
+            <button class="copy" id="copyBtn" type="button">Copiar</button>
+          </div>
+          <pre id="codeBlock" role="tabpanel" aria-live="polite"></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section style="padding-top:0">
+    <div class="container">
+      <div class="cta reveal" id="trial">
+        <h2>Experimente o FinoraQi hoje.</h2>
+        <p>Ative em menos de 2 minutos. Sem compras, sem compromisso.</p>
+        <div class="cta-actions">
+          <a href="app.html" class="btn btn-gold">Teste pessoal <span class="arrow">→</span></a>
+          <a href="app.html#cashpool" class="btn btn-ghost">Teste empresarial</a>
+          <a href="app.html#automl" class="btn btn-ghost">Treinar Core</a>
+        </div>
+        <div class="cta-points"><span>Funcionalidades Pro</span><span>Cancele quando quiser</span><span>Onboarding personalizado</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sobre -->
+  <section id="sobre" style="padding-top:2rem">
+    <div class="container about">
+      <div class="reveal">
+        <span class="eyebrow">Sobre nós</span>
+        <div class="section-head" style="margin-bottom:1.5rem">
+          <h2>Transformando vidas através da educação financeira.</h2>
+        </div>
+        <p>A FinoraQi nasceu para democratizar o acesso ao crédito e à educação financeira, especialmente para jovens de áreas de risco.</p>
+        <p>Combinamos tecnologia de ponta com uma abordagem humanizada: ferramentas que ajudam no controle de gastos, na construção de score e, agora, na gestão de caixa de empresas.</p>
+      </div>
+      <div class="about-stats reveal">
+        <div><strong data-count="10000" data-suffix="K+">0</strong><span>Usuários ativos</span></div>
+        <div><strong data-count="100" data-suffix="%">0</strong><span>Satisfação</span></div>
+        <div><strong data-count="50000" data-suffix="K+">0</strong><span>Operações</span></div>
+        <div><strong>24/7</strong><span>Suporte</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Parceiros -->
+  <section class="partners" id="parceiros">
+    <div class="container">
+      <p>Empresas que confiam e utilizam a FinoraQi</p>
+    </div>
+    <div class="marquee">
+      <div class="marquee-track" id="partnersTrack">
+        <img src="assets/img/proa.png" alt="Proa" loading="lazy">
+        <img src="assets/img/dataprev.jpg" alt="Dataprev" loading="lazy">
+        <img src="assets/img/serasa.png" alt="Serasa" loading="lazy">
+        <img src="assets/img/cnpq.png" alt="CNPq" loading="lazy">
+        <img src="assets/img/engie.png" alt="Engie" loading="lazy">
+        <img src="assets/img/metro.png" alt="Metrô SP" loading="lazy">
+        <img src="assets/img/senac.png" alt="Senac" loading="lazy">
+        <img src="assets/img/prev.png" alt="Prev" loading="lazy">
+        <img src="assets/img/hsbc.png" alt="HSBC" loading="lazy">
+        <img src="assets/img/spc.jpg" alt="SPC" loading="lazy">
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="contato">
+  <div class="container">
+    <div class="foot">
+      <div>
+        <a href="#inicio" class="brand"><img src="assets/img/logo.png" alt="" width="32" height="32"><b>Finora<span>Qi</span></b></a>
+        <p>Finanças pessoais e empresariais com tecnologia, educação e inclusão financeira para todos.</p>
+        <div class="socials">
+          <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.5h4V21H3zM9.5 9.5h3.8v1.6h.1c.5-1 1.8-2 3.8-2 4 0 4.8 2.6 4.8 6V21h-4v-5.2c0-1.2 0-2.8-1.7-2.8s-2 1.3-2 2.7V21h-4z"/></svg></a>
+          <a href="https://www.youtube.com/watch?v=m8ZasTxFJdk" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12a31 31 0 0 0 .5 4.8 3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.75 15.02V8.98L15.5 12z"/></svg></a>
+          <a href="mailto:finoraqi.finance@gmail.com" aria-label="E-mail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></a>
+        </div>
+      </div>
+      <div>
+        <h5>Produtos</h5>
+        <ul>
+          <li><a href="#produtos">FinoraQi CRM</a></li>
+          <li><a href="#produtos">Enterprise</a></li>
+          <li><a href="#api">API de crédito</a></li>
+          <li><a href="#cashpool">CashPool B2B</a></li>
+          <li><a href="app.html#score">Calculadora de score</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Empresa</h5>
+        <ul>
+          <li><a href="#sobre">Sobre nós</a></li>
+          <li><a href="#parceiros">Parceiros</a></li>
+          <li><a href="#">Carreiras</a></li>
+          <li><a href="#">Blog</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Legal</h5>
+        <ul>
+          <li><a href="#">Termos de uso</a></li>
+          <li><a href="#">Privacidade</a></li>
+          <li><a href="#">LGPD</a></li>
+          <li><a href="#">Segurança</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2030 FinoraQi®. Todos os direitos reservados. · CNPJ 00.000.000/0001-00</span>
+      <span>Instituição de Pagamento autorizada pelo Banco Central · PT-BR</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Header border on scroll
+  const header = $('header');
+  const onScroll = () => header.classList.toggle('scrolled', scrollY > 8);
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+  // Mobile menu
+  const menuBtn = $('#menuBtn');
+  const setMenu = open => { document.body.classList.toggle('menu-open', open); menuBtn.setAttribute('aria-expanded', open); };
+  menuBtn.addEventListener('click', () => setMenu(!document.body.classList.contains('menu-open')));
+  $$('#navLinks a').forEach(a => a.addEventListener('click', () => setMenu(false)));
+
+  // Active nav link
+  const links = $$('#navLinks a[href^="#"]');
+  const spy = new IntersectionObserver(entries => entries.forEach(e => {
+    if (e.isIntersecting) links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id));
+  }), { rootMargin: '-45% 0px -50% 0px' });
+  links.forEach(l => { const t = $(l.getAttribute('href')); if (t) spy.observe(t); });
+
+  // Reveal + counters
+  const formatCount = (el, v) => {
+    const target = +el.dataset.count, suffix = el.dataset.suffix || '';
+    el.textContent = suffix === 'K+' ? Math.round(v / 1000) + 'K+' : Math.round(v) + suffix;
+    if (v >= target && suffix === 'K+') el.textContent = Math.round(target / 1000) + 'K+';
+  };
+  const runCount = el => {
+    const target = +el.dataset.count;
+    if (reduced) return formatCount(el, target);
+    const start = performance.now(), dur = 1400;
+    const tick = t => {
+      const p = Math.min((t - start) / dur, 1), eased = 1 - Math.pow(1 - p, 3);
+      formatCount(el, target * eased);
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+  const io = new IntersectionObserver(entries => entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    e.target.classList.add('in');
+    $$('[data-count]', e.target).forEach(runCount);
+    io.unobserve(e.target);
+  }), { threshold: 0.15 });
+  $$('.reveal').forEach((el, i) => { el.style.transitionDelay = (i % 4) * 60 + 'ms'; io.observe(el); });
+
+  // Netting demo
+  const panel = $('#nettingPanel');
+  const data = {
+    gross: { transfers: '4', volume: '350k', saving: '—' },
+    net: { transfers: '2', volume: '20k', saving: '−94%' }
+  };
+  const setMode = mode => {
+    panel.classList.toggle('mode-gross', mode === 'gross');
+    panel.classList.toggle('mode-net', mode === 'net');
+    $$('.seg button', panel).forEach(b => b.setAttribute('aria-pressed', b.dataset.set === mode));
+    $('#stTransfers').textContent = data[mode].transfers;
+    $('#stVolume').textContent = data[mode].volume;
+    const s = $('#stSaving'); s.textContent = data[mode].saving; s.classList.toggle('good', mode === 'net');
+  };
+  $$('.seg button', panel).forEach(b => b.addEventListener('click', () => { setMode(b.dataset.set); autoplay = false; }));
+  let autoplay = !reduced, mode = 'gross';
+  setInterval(() => { if (autoplay) setMode(mode = mode === 'gross' ? 'net' : 'gross'); }, 3200);
+
+  // API snippets
+  const snippets = [
+    { file: 'credit-operation.http', code:
+`<span class="m">POST</span> /api/v1/credit-operation
+<span class="c">Content-Type: application/json</span>
+
+{
+  <span class="k">"cpf"</span>: <span class="s">"123.456.789-00"</span>,
+  <span class="k">"valor"</span>: <span class="n">150.00</span>,
+  <span class="k">"tipo"</span>: <span class="s">"pagamento"</span>
+}` },
+    { file: 'score.http', code:
+`<span class="m">GET</span> /api/v1/score/{cpf}
+
+<span class="c">// 200 OK</span>
+{
+  <span class="k">"score"</span>: <span class="n">650</span>,
+  <span class="k">"ultima_atualizacao"</span>: <span class="s">"2026-01-15T10:30:00Z"</span>,
+  <span class="k">"status"</span>: <span class="s">"ativo"</span>
+}` },
+    { file: 'headers.http', code:
+`<span class="c">// Todas as requisições</span>
+<span class="k">Authorization</span>: Bearer <span class="s">{token}</span>
+<span class="k">X-API-Key</span>: <span class="s">{sua_chave}</span>
+<span class="k">Content-Type</span>: application/json` },
+    { file: 'cashpool.http', code:
+`<span class="m">POST</span> /api/v1/cashpool/pools/{pool_id}/netting
+<span class="c">// requer flag cashpool.netting</span>
+
+{
+  <span class="k">"mode"</span>: <span class="s">"multilateral"</span>,
+  <span class="k">"dry_run"</span>: <span class="n">true</span>
+}
+
+<span class="m">GET</span>  /api/v1/cashpool/pools/{pool_id}/positions?as_of=…` }
+  ];
+  const codeBlock = $('#codeBlock'), codeFile = $('#codeFile'), tabs = $$('.api-point');
+  const showSnippet = i => {
+    tabs.forEach((t, j) => t.setAttribute('aria-selected', i === j));
+    codeBlock.innerHTML = snippets[i].code; codeFile.textContent = snippets[i].file;
+  };
+  tabs.forEach((t, i) => t.addEventListener('click', () => showSnippet(i)));
+  showSnippet(0);
+  $('#copyBtn').addEventListener('click', async e => {
+    try { await navigator.clipboard.writeText(codeBlock.innerText); e.target.textContent = 'Copiado'; }
+    catch { e.target.textContent = 'Erro'; }
+    setTimeout(() => e.target.textContent = 'Copiar', 1500);
+  });
+
+  // Partners marquee (duplicate for seamless loop)
+  const track = $('#partnersTrack');
+  track.innerHTML += track.innerHTML;
+  $$('img', track).slice(track.children.length / 2).forEach(img => img.setAttribute('aria-hidden', 'true'));
+})();
+</script>
+</body>
+</html>
