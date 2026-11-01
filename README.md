@@ -1,9 +1,7 @@
 # FinoraQi
 
-<img width="1028" height="1024" alt="Gemini_Generated_Image_d1nmc1d1nmc1d1nm" src="https://github.com/user-attachments/assets/0b476818-0f0d-4ba9-9a0b-9120e448104f" />
+<img width="1028" height="1024" alt="Gemini_Generated_Image_16wpgh16wpgh16wp" src="https://github.com/user-attachments/assets/52e72d71-313e-4fb8-9600-9846cc7981e5" />
 
-<img width="1028" height="1024" alt="Gemini_Generated_Image_uh32v4uh32v4uh32" src="https://github.com/user-attachments/assets/c38d82f8-af5e-4c1e-bbba-d0efe56ee5cd" />
-
-<img width="1376" height="768" alt="Gemini_Generated_Image_llcj5nllcj5nllcj" src="https://github.com/user-attachments/assets/bacc401d-3eab-4e6e-b6b6-a4ff5f287d79" />
+<img width="1028" height="1024" alt="Gemini_Generated_Image_5oik9q5oik9q5oik" src="https://github.com/user-attachments/assets/3829a2ae-12a2-47b0-94e4-179cecf2c090" />
 
 ®
