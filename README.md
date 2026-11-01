@@ -1,6 +1,6 @@
 # FinoraQi
 
-<img width="1028" height="1024" alt="Gemini_Generated_Image_dxxu3udxxu3udxxu" src="https://github.com/user-attachments/assets/2603ee87-9b8b-4fc1-91bb-6d76374ca18c" />
+<img width="1028" height="1024" alt="Gemini_Generated_Image_4gt774gt774gt774" src="https://github.com/user-attachments/assets/9cecb3c6-a53a-4f9d-80da-ce929c0f7757" />
 
 <img width="1028" height="1024" alt="Gemini_Generated_Image_uh32v4uh32v4uh32" src="https://github.com/user-attachments/assets/c38d82f8-af5e-4c1e-bbba-d0efe56ee5cd" />
 
