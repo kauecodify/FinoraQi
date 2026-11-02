@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinoraQi | RatingPlus Engine v2.1</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-deep: #05070a;
+            --bg-surface: rgba(16, 22, 34, 0.75);
+            --border-subtle: rgba(255, 255, 255, 0.07);
+            --border-medium: rgba(255, 255, 255, 0.15);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+            --accent-blue: #3b82f6;
+            --accent-purple: #a78bfa;
+            --accent-cyan: #06b6d4;
+            --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --radius-card: 12px;
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --blur-glass: blur(20px);
+            --transition: 0.2s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image:
+                radial-gradient(ellipse 60% 50% at 10% 0%, rgba(6, 182, 212, 0.08), transparent),
+                radial-gradient(ellipse 50% 50% at 90% 100%, rgba(167, 139, 250, 0.08), transparent);
+        }
+
+        /* HEADER */
+        .header {
+            padding: 12px 24px;
+            background: var(--bg-surface);
+            backdrop-filter: var(--blur-glass);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .logo-container { display: flex; align-items: center; gap: 12px; }
+        .logo-img { width: 28px; height: 28px; }
+        .logo-text { font-weight: 700; font-size: 16px; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+        .logo-badge {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: var(--accent-blue);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+        }
+
+        .header-actions { display: flex; gap: 12px; align-items: center; }
+
+        /* LAYOUT */
+        .container {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 20px;
+            padding: 20px;
+            flex: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* PANELS */
+        .panel {
+            background: var(--bg-surface);
+            backdrop-filter: var(--blur-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-card);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 12px;
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        /* FORMS & INPUTS */
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; }
+        
+        .form-control {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-medium);
+            color: var(--text-primary);
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: var(--font-mono);
+            outline: none;
+            transition: var(--transition);
+        }
+        .form-control:focus { border-color: var(--accent-blue); }
+        .form-control option { background: var(--bg-deep); }
+
+        .dropzone {
+            border: 2px dashed var(--border-medium);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .dropzone:hover, .dropzone.dragover { border-color: var(--accent-blue); background: rgba(59, 130, 246, 0.05); }
+
+        .column-list {
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .column-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        .column-item:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); }
+        .column-item input { accent-color: var(--accent-blue); }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: var(--font-sans);
+        }
+        .btn-primary { background: var(--accent-blue); color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-success { background: var(--accent-green); color: #000; }
+        .btn-success:hover { background: #059669; }
+        .btn-outline { background: transparent; border: 1px solid var(--border-medium); color: var(--text-primary); }
+        .btn-outline:hover { background: rgba(255, 255, 255, 0.05); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* METRICS GRID */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .metric-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+        }
+        .metric-card.blue::before { background: var(--accent-blue); }
+        .metric-card.green::before { background: var(--accent-green); }
+        .metric-card.amber::before { background: var(--accent-amber); }
+        .metric-card.purple::before { background: var(--accent-purple); }
+        .metric-card.cyan::before { background: var(--accent-cyan); }
+
+        .metric-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+        .metric-value { font-family: var(--font-mono); font-size: 24px; font-weight: 700; }
+        .metric-value.blue { color: var(--accent-blue); }
+        .metric-value.green { color: var(--accent-green); }
+        .metric-value.amber { color: var(--accent-amber); }
+        .metric-value.purple { color: var(--accent-purple); }
+        .metric-value.cyan { color: var(--accent-cyan); }
+
+        /* CHARTS GRID */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .chart-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 16px;
+            height: 280px;
+            position: relative;
+        }
+
+        /* TABLE */
+        .table-wrapper {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 11px; font-family: var(--font-mono); }
+        
+        th {
+            position: sticky;
+            top: 0;
+            background: #0f141e;
+            padding: 10px 16px;
+            text-align: left;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-subtle);
+            z-index: 10;
+        }
+
+        td { padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); color: var(--text-secondary); }
+        tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
+        .badge-amber { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+        .badge-red { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+        .badge-blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+
+        /* PROGRESS & LOG */
+        .progress-bar { height: 4px; background: var(--border-medium); border-radius: 2px; overflow: hidden; width: 100%; margin-top: 8px; }
+        .progress-fill { height: 100%; background: var(--accent-blue); width: 0%; transition: width 0.2s ease; }
+
+        .log-terminal {
+            background: #05070a;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 10px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+            color: var(--text-muted);
+        }
+
+        .log-entry { display: flex; gap: 10px; padding: 2px 0; }
+        .log-time { color: var(--accent-blue); min-width: 60px; }
+
+        /* ONBOARDING */
+        .onboarding-overlay { position: fixed; inset: 0; background: rgba(5, 7, 10, 0.85); backdrop-filter: blur(4px); display: none; z-index: 1000; }
+        .onboarding-overlay.active { display: block; }
+        .onboarding-spotlight { position: fixed; border-radius: 8px; box-shadow: 0 0 0 9999px rgba(5, 7, 10, 0.85), 0 0 0 2px var(--accent-blue); pointer-events: none; z-index: 1001; transition: all 0.3s ease; display: none; }
+        .onboarding-tooltip { position: fixed; background: var(--bg-deep); border: 1px solid var(--border-medium); border-radius: 8px; padding: 16px; max-width: 320px; z-index: 1002; box-shadow: var(--shadow-card); display: none; flex-direction: column; gap: 12px; }
+        .onboarding-tooltip.active { display: flex; }
+        .onboarding-header { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; }
+        .onboarding-step { background: var(--accent-blue); color: #000; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 10px; }
+        .onboarding-title { font-weight: 600; font-size: 13px; }
+        .onboarding-body { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+        .onboarding-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--border-subtle); }
+        .onboarding-nav { display: flex; gap: 8px; }
+        .onboarding-btn { padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; }
+        .onboarding-btn-primary { background: var(--accent-blue); color: white; }
+        .onboarding-btn-secondary { background: transparent; border: 1px solid var(--border-medium); color: var(--text-primary); }
+
+        @media(max-width: 1024px) {
+            .container { grid-template-columns: 1fr; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo-container">
+            <img src="logo.png" alt="FinoraQi" class="logo-img" onerror="this.style.display='none'">
+            <div class="logo-text">
+                FinoraQi | RatingPlus Engine
+                <span class="logo-badge">v2.1 [AI/ML]</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <span id="modelStatus" class="badge badge-green">Status: Aguardando</span>
+            <button class="btn btn-outline" onclick="exportModel()">Exportar Artefato</button>
+            <button class="btn btn-outline" onclick="window.tour.start(0)">Ajuda / Tour</button>
+            <button class="btn btn-outline" onclick="window.location.href='index.html'">Sair</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- CONFIG PANEL -->
+        <aside class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Configuração do Pipeline</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Ingestão de Dataset</label>
+                <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+                    <input type="file" id="fileInput" style="display:none" accept=".csv,.xlsx,.xls"/>
+                    <div style="font-size:12px; font-weight:600;">Arraste ou clique para carregar</div>
+                    <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">CSV, XLSX</div>
+                </div>
+                <button class="btn btn-outline" style="margin-top:8px; font-size:11px;" onclick="loadSampleData()">Carregar Base de Exemplo (FinoraQi)</button>
+                <div id="fileInfo" style="font-size:11px; color:var(--accent-green); display:none; margin-top:4px;"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Algoritmo (Estimator)</label>
+                <select id="algorithmSelect" class="form-control">
+                    <option value="xgboost">XGBoost (Gradient Boosting)</option>
+                    <option value="lightgbm">LightGBM (Leaf-wise)</option>
+                    <option value="random_forest">Random Forest (Ensemble)</option>
+                    <option value="neural_network">Neural Network (Deep Learning)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Target (Variável Alvo)</label>
+                <select id="targetColumn" class="form-control">
+                    <option value="rating_credito">rating_credito (A+, A, B, C, D)</option>
+                    <option value="score_bureau">score_bureau (0-1000)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Features Preditivas</label>
+                <div class="column-list" id="columnList">
+                    <div style="color:var(--text-muted); font-size:11px; padding:10px;">Aguardando dados...</div>
+                </div>
+            </div>
+
+            <button id="trainBtn" class="btn btn-success" onclick="startTraining()" style="margin-top:8px;">
+                Iniciar Treinamento
+            </button>
+
+            <div style="margin-top:8px;">
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted);">
+                    <span>Otimização de Hiperparâmetros</span>
+                    <span id="progressText">0%</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            </div>
+        </aside>
+
+        <!-- RESULTS PANEL -->
+        <section class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Monitoramento de Performance</span>
+                <span class="badge badge-blue" id="processedBadge">0 registros inferidos</span>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card blue">
+                    <div class="metric-label">Acurácia</div>
+                    <div class="metric-value blue" id="accuracyMetric">--</div>
+                </div>
+                <div class="metric-card green">
+                    <div class="metric-label">F1-Score</div>
+                    <div class="metric-value green" id="f1Metric">--</div>
+                </div>
+                <div class="metric-card purple">
+                    <div class="metric-label">ROC-AUC</div>
+                    <div class="metric-value purple" id="aucMetric">--</div>
+                </div>
+                <div class="metric-card amber">
+                    <div class="metric-label">Anomalias</div>
+                    <div class="metric-value amber" id="anomalyMetric">0</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <canvas id="forecastChart"></canvas>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Rating Previsto</th>
+                            <th>Confiança</th>
+                            <th>Anomalia</th>
+                            <th>Impacto no Yield</th>
+                        </tr>
+                    </thead>
+                    <tbody id="predictionsBody">
+                        <tr>
+                            <td colspan="6" style="text-align:center; padding:20px;">Aguardando treinamento...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="log-terminal" id="logTerminal">
+                <div class="log-entry"><span class="log-time">SYS</span><span>Inicializando FinoraQi RatingPlus v2.1</span></div>
+                <div class="log-entry"><span class="log-time">SYS</span><span>Módulos XAI e Anomaly Detection carregados.</span></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ONBOARDING -->
+    <div class="onboarding-overlay" id="tourOverlay"></div>
+    <div class="onboarding-spotlight" id="tourSpotlight"></div>
+    <div class="onboarding-tooltip" id="tourTooltip"></div>
+
+    <script>
+        const STATE = {
+            isDataLoaded: false,
+            isTraining: false,
+            processed: 0,
+            anomalies: 0,
+            accuracy: 0,
+            f1: 0,
+            auc: 0,
+            chartPerf: null,
+            chartForecast: null,
+            trainingInterval: null
+        };
+
+        const COMPANIES = ['Magalu', 'Nubank', 'Americanas', 'Oi', 'Raízen', 'Creditas', 'Inter', 'BTG Pactual', 'iCred', 'Loggi'];
+        const RATINGS = ['A+', 'A', 'B', 'C', 'D'];
+
+        function log(msg) {
+            const term = document.getElementById('logTerminal');
+            const time = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+            term.innerHTML += `<div class="log-entry"><span class="log-time">${time}</span><span>${msg}</span></div>`;
+            term.scrollTop = term.scrollHeight;
+        }
+
+        function loadSampleData() {
+            STATE.isDataLoaded = true;
+            const info = document.getElementById('fileInfo');
+            info.style.display = 'block';
+            info.textContent = 'Base carregada: finoraqi_risk_dataset.csv (25.000 linhas)';
+            
+            const list = document.getElementById('columnList');
+            list.innerHTML = `
+                <label class="column-item"><input type="checkbox" checked> renda_mensal</label>
+                <label class="column-item"><input type="checkbox" checked> score_bureau</label>
+                <label class="column-item"><input type="checkbox" checked> historico_pagamentos</label>
+                <label class="column-item"><input type="checkbox" checked> dividas_ativas</label>
+                <label class="column-item"><input type="checkbox" checked> tempo_emprego</label>
+            `;
+            log('Dataset importado. 25.000 registros disponíveis.');
+        }
+
+        function initCharts() {
+            const ctxPerf = document.getElementById('performanceChart').getContext('2d');
+            STATE.chartPerf = new Chart(ctxPerf, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Acurácia', data: [], borderColor: '#3b82f6', tension: 0.3, pointRadius: 0 },
+                        { label: 'ROC-AUC', data: [], borderColor: '#a78bfa', tension: 0.3, pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'monospace', size: 10 } } }, title: { display: true, text: 'Convergência do Modelo', color: '#94a3b8', font: { size: 11 } } },
+                    scales: {
+                        x: { display: false },
+                        y: { min: 0.5, max: 1.0, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }
+                    }
+                }
+            });
+
+            const ctxForecast = document.getElementById('forecastChart').getContext('2d');
+            STATE.chartForecast = new Chart(ctxForecast, {
+                type: 'bar',
+                data: {
+                    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'],
+                    datasets: [
+                        { label: 'Liquidez Histórica', data: [100, 120, 90, 140, 130], backgroundColor: '#334155', borderRadius: 4 },
+                        { label: 'Forecast (ML)', data: [0, 0, 0, 0, 0], backgroundColor: '#10b981', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'monospace', size: 10 } } }, title: { display: true, text: 'Previsão de Liquidez B2B (Cash Pooling)', color: '#94a3b8', font: { size: 11 } } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#64748b' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }
+                    }
+                }
+            });
+        }
+
+        function startTraining() {
+            if (!STATE.isDataLoaded) {
+                alert('Carregue o dataset primeiro.');
+                return;
+            }
+
+            const algo = document.getElementById('algorithmSelect').value;
+            const btn = document.getElementById('trainBtn');
+            btn.disabled = true;
+            btn.textContent = 'Otimizando...';
+            
+            const status = document.getElementById('modelStatus');
+            status.className = 'badge badge-amber';
+            status.textContent = 'Status: Treinando';
+
+            log(`Inicializando ${algo.toUpperCase()} via Bayesian Optimization.`);
+            
+            STATE.isTraining = true;
+            STATE.processed = 0;
+            STATE.anomalies = 0;
+            STATE.accuracy = 0.55;
+            STATE.f1 = 0.50;
+            STATE.auc = 0.60;
+
+            document.getElementById('predictionsBody').innerHTML = '';
+            STATE.chartPerf.data.labels = [];
+            STATE.chartPerf.data.datasets.forEach(d => d.data = []);
+            STATE.chartPerf.update();
+
+            let epoch = 0;
+            const maxEpochs = 40;
+            
+            // Comportamento diferente baseado no algoritmo
+            let learningRate = 0.02;
+            if (algo === 'neural_network') learningRate = 0.015;
+            if (algo === 'random_forest') learningRate = 0.04;
+
+            STATE.trainingInterval = setInterval(() => {
+                epoch++;
+                
+                // Simula convergência
+                STATE.accuracy = Math.min(0.985, STATE.accuracy + (Math.random() * learningRate));
+                STATE.f1 = Math.min(0.975, STATE.f1 + (Math.random() * (learningRate * 0.9)));
+                STATE.auc = Math.min(0.992, STATE.auc + (Math.random() * (learningRate * 1.1)));
+
+                // Atualiza KPIs
+                document.getElementById('accuracyMetric').textContent = (STATE.accuracy * 100).toFixed(1) + '%';
+                document.getElementById('f1Metric').textContent = STATE.f1.toFixed(3);
+                document.getElementById('aucMetric').textContent = STATE.auc.toFixed(3);
+                
+                // Simula predições e anomalias
+                if (Math.random() < 0.6) {
+                    STATE.processed += Math.floor(Math.random() * 80) + 20;
+                    document.getElementById('processedBadge').textContent = `${STATE.processed.toLocaleString('pt-BR')} registros inferidos`;
+                    addPrediction(algo);
+                }
+
+                // Atualiza Gráficos
+                STATE.chartPerf.data.labels.push(epoch);
+                STATE.chartPerf.data.datasets[0].data.push(STATE.accuracy);
+                STATE.chartPerf.data.datasets[1].data.push(STATE.auc);
+                STATE.chartPerf.update('none');
+
+                // Atualiza Forecast (apenas no final da simulação de treino)
+                if (epoch > 20 && epoch % 5 === 0) {
+                    const forecast = [120, 150, 110, 180, 160].map(v => v + (Math.random() * 40 - 10));
+                    STATE.chartForecast.data.datasets[1].data = forecast;
+                    STATE.chartForecast.update('none');
+                }
+
+                const progress = (epoch / maxEpochs) * 100;
+                document.getElementById('progressFill').style.width = `${progress}%`;
+                document.getElementById('progressText').textContent = `${Math.floor(progress)}%`;
+
+                if (epoch >= maxEpochs) {
+                    clearInterval(STATE.trainingInterval);
+                    finishTraining();
+                }
+            }, 120);
+        }
+
+        function addPrediction(algo) {
+            const tbody = document.getElementById('predictionsBody');
+            if (tbody.children.length > 8) tbody.lastChild.remove();
+
+            const company = COMPANIES[Math.floor(Math.random() * COMPANIES.length)];
+            const rating = RATINGS[Math.floor(Math.random() * RATINGS.length)];
+            const confidence = (Math.random() * 15 + 85).toFixed(1);
+            
+            // Isolation Forest simulation
+            const isAnomaly = Math.random() < 0.04; // 4% chance
+            if (isAnomaly) STATE.anomalies++;
+            document.getElementById('anomalyMetric').textContent = STATE.anomalies;
+
+            let badgeClass = 'badge-green';
+            let impact = '-1.2% Risk Premium';
+            if (rating === 'B') { badgeClass = 'badge-amber'; impact = 'Base Premium'; }
+            if (rating === 'C' || rating === 'D' || isAnomaly) { badgeClass = 'badge-red'; impact = '+2.5% Risk Premium'; }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="color:var(--accent-blue);">#${Math.floor(Math.random() * 90000) + 10000}</td>
+                <td>${company}</td>
+                <td><span class="badge ${badgeClass}">${rating}</span></td>
+                <td>${confidence}%</td>
+                <td>${isAnomaly ? '<span class="badge badge-red">Outlier</span>' : '<span class="badge badge-green">Normal</span>'}</td>
+                <td>${impact}</td>
+            `;
+            tbody.insertBefore(tr, tbody.firstChild);
+        }
+
+        function finishTraining() {
+            STATE.isTraining = false;
+            const btn = document.getElementById('trainBtn');
+            btn.disabled = false;
+            btn.textContent = 'Iniciar Treinamento';
+            
+            const status = document.getElementById('modelStatus');
+            status.className = 'badge badge-green';
+            status.textContent = 'Status: Modelo Pronto';
+
+            log(`Treinamento concluído com sucesso.`);
+            log(`Métrica final ROC-AUC: ${STATE.auc.toFixed(3)} | Acurácia: ${(STATE.accuracy * 100).toFixed(1)}%`);
+            log(`Anomalias isoladas: ${STATE.anomalies}`);
+        }
+
+        function exportModel() {
+            if (!STATE.isDataLoaded) return alert('Treine o modelo primeiro.');
+            log('Empacotando artefato (.pkl) e metadados...');
+            setTimeout(() => log('Download: finoraqi_ratingplus_v2.pkl iniciado.'), 800);
+        }
+
+        // ONBOARDING TOUR (Text-only)
+        class Tour {
+            constructor() {
+                this.steps = [
+                    { target: null, title: 'FinoraQi RatingPlus v2.1', text: 'Pipeline de IA/ML para scoring de crédito e previsão de liquidez.', pos: 'center' },
+                    { target: '#algorithmSelect', title: 'Seleção de Algoritmo', text: 'Escolha entre XGBoost, LightGBM, Random Forest ou Redes Neurais.', pos: 'right' },
+                    { target: '#trainBtn', title: 'Otimização de Hiperparâmetros', text: 'O motor simula uma busca bayesiana e treina o modelo em tempo real.', pos: 'right' },
+                    { target: '#forecastChart', title: 'Cash Flow Forecasting', text: 'O modelo também projeta a liquidez futura para operações de Cash Pooling B2B.', pos: 'bottom' },
+                    { target: '#predictionsBody', title: 'Isolation Forest', text: 'O motor detecta outliers e anomalias nas transações, sinalizando riscos ocultos.', pos: 'top' }
+                ];
+                this.current = 0;
+                this.init();
+            }
+            init() {
+                this.overlay = document.getElementById('tourOverlay');
+                this.spot = document.getElementById('tourSpotlight');
+                this.tip = document.getElementById('tourTooltip');
+            }
+            start(idx) {
+                this.current = idx;
+                this.overlay.classList.add('active');
+                this.render();
+            }
+            render() {
+                const s = this.steps[this.current];
+                if (s.target) {
+                    const el = document.querySelector(s.target);
+                    if (el) {
+                        const r = el.getBoundingClientRect();
+                        this.spot.style.display = 'block';
+                        this.spot.style.left = `${r.left - 8}px`;
+                        this.spot.style.top = `${r.top - 8}px`;
+                        this.spot.style.width = `${r.width + 16}px`;
+                        this.spot.style.height = `${r.height + 16}px`;
+                    }
+                } else {
+                    this.spot.style.display = 'none';
+                }
+
+                this.tip.innerHTML = `
+                    <div class="onboarding-header">
+                        <span class="onboarding-step">${this.current + 1}</span>
+                        <span class="onboarding-title">${s.title}</span>
+                    </div>
+                    <div class="onboarding-body">${s.text}</div>
+                    <div class="onboarding-footer">
+                        <div></div>
+                        <div class="onboarding-nav">
+                            ${this.current > 0 ? `<button class="onboarding-btn onboarding-btn-secondary" onclick="window.tour.prev()">Voltar</button>` : ''}
+                            <button class="onboarding-btn onboarding-btn-primary" onclick="window.tour.next()">${this.current === this.steps.length - 1 ? 'Concluir' : 'Próximo'}</button>
+                        </div>
+                    </div>
+                `;
+                this.tip.classList.add('active');
+
+                const tr = this.tip.getBoundingClientRect();
+                if (s.target) {
+                    const r = document.querySelector(s.target).getBoundingClientRect();
+                    let top = 0, left = 0;
+                    if (s.pos === 'right') { top = r.top; left = r.right + 20; }
+                    else if (s.pos === 'bottom') { top = r.bottom + 20; left = r.left; }
+                    else if (s.pos === 'top') { top = r.top - tr.height - 20; left = r.left; }
+                    
+                    top = Math.max(10, Math.min(top, window.innerHeight - tr.height - 10));
+                    left = Math.max(10, Math.min(left, window.innerWidth - tr.width - 10));
+                    
+                    this.tip.style.top = `${top}px`;
+                    this.tip.style.left = `${left}px`;
+                    this.tip.style.transform = 'none';
+                } else {
+                    this.tip.style.top = '50%';
+                    this.tip.style.left = '50%';
+                    this.tip.style.transform = 'translate(-50%, -50%)';
+                }
+            }
+            next() {
+                if (this.current < this.steps.length - 1) {
+                    this.current++;
+                    this.render();
+                } else {
+                    this.close();
+                }
+            }
+            prev() {
+                if (this.current > 0) {
+                    this.current--;
+                    this.render();
+                }
+            }
+            close() {
+                this.overlay.classList.remove('active');
+                this.spot.style.display = 'none';
+                this.tip.classList.remove('active');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            window.tour = new Tour();
+            
+            const dropzone = document.getElementById('dropzone');
+            dropzone.ondragover = (e) => { e.preventDefault(); dropzone.classList.add('dragover'); };
+            dropzone.ondragleave = () => dropzone.classList.remove('dragover');
+            dropzone.ondrop = (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+                loadSampleData();
+            };
+        });
+    </script>
+</body>
+</html>
