@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinoraQi® | Terminal de Pagamentos em Tempo Real</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-deep: #080a0f;
+            --bg-surface: rgba(16, 20, 30, 0.72);
+            --border-subtle: rgba(255, 255, 255, 0.07);
+            --border-medium: rgba(255, 255, 255, 0.12);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-green: #34d399;
+            --accent-red: #f87171;
+            --accent-amber: #fbbf24;
+            --accent-blue: #60a5fa;
+            --accent-purple: #a78bfa;
+            --accent-cyan: #22d3ee;
+            --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --radius-card: 14px;
+            --radius-pill: 100px;
+            --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
+            --blur-glass: blur(16px);
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 14px;
+            line-height: 1.5;
+            height: 100vh;
+            overflow: hidden;
+            background-image:
+                radial-gradient(ellipse 80% 60% at 10% 0%, rgba(34, 211, 238, 0.06), transparent),
+                radial-gradient(ellipse 60% 50% at 90% 100%, rgba(167, 139, 250, 0.05), transparent);
+        }
+
+        .app-shell { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
+
+        .sidebar {
+            background: var(--bg-surface); backdrop-filter: var(--blur-glass);
+            border-right: 1px solid var(--border-subtle); padding: 20px 12px;
+            display: flex; flex-direction: column; gap: 4px;
+            height: 100vh; overflow-y: auto; z-index: 1000;
+        }
+        .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 8px 10px 20px; font-weight: 700; font-size: 16px; }
+        .brand-logo { width: 26px; height: 26px; object-fit: contain; }
+        .sidebar-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 16px 10px 6px; }
+        
+        .nav-item {
+            display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px;
+            color: var(--text-secondary); text-decoration: none; font-size: 13px; font-weight: 500;
+            cursor: pointer; transition: var(--transition); border: 1px solid transparent;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
+        .nav-item.active { background: rgba(96, 165, 250, 0.1); color: var(--accent-blue); border-color: rgba(96, 165, 250, 0.15); }
+        .nav-item.back-btn { margin-top: 10px; background: rgba(52, 211, 153, 0.1); color: var(--accent-green); border-color: rgba(52, 211, 153, 0.2); }
+        .nav-item.back-btn:hover { background: rgba(52, 211, 153, 0.2); }
+        .nav-item .icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+
+        .main-area { padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0; height: 100vh; overflow: hidden; }
+
+        .topbar {
+            display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+            background: var(--bg-surface); backdrop-filter: var(--blur-glass); border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-card); padding: 10px 16px; box-shadow: var(--shadow-card);
+            flex-shrink: 0;
+        }
+        .topbar-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .status-connection { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; font-family: var(--font-mono); color: var(--accent-green); }
+        .status-connection .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); animation: pulse-dot 1.5s infinite; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .server-clock { font-family: var(--font-mono); font-size: 13px; color: var(--text-secondary); padding: 4px 10px; background: rgba(255,255,255,0.03); border-radius: var(--radius-pill); border: 1px solid var(--border-subtle); }
+        
+        /* SPA Views Container */
+        .views-container { flex: 1; overflow-y: auto; position: relative; padding-right: 4px; }
+        
+        .view-section { 
+            display: none; 
+            width: 100%; 
+            height: 100%;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .view-section.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .bento-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; transition: var(--transition); }
+        .bento-card {
+            background: var(--bg-surface); backdrop-filter: var(--blur-glass); border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-card); padding: 18px 20px; box-shadow: var(--shadow-card);
+            position: relative; overflow: hidden; transition: border-color var(--transition), box-shadow var(--transition);
+        }
+        .bento-card:hover { border-color: var(--border-medium); }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+        .card-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); }
+        .card-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-pill); background: rgba(52, 211, 153, 0.12); color: var(--accent-green); font-family: var(--font-mono); }
+        .card-badge.warn { background: rgba(251, 191, 36, 0.12); color: var(--accent-amber); }
+        .card-badge.danger { background: rgba(248, 113, 113, 0.12); color: var(--accent-red); }
+        .card-badge.info { background: rgba(96, 165, 250, 0.12); color: var(--accent-blue); }
+        
+        .metric-value { font-family: var(--font-mono); font-size: 26px; font-weight: 700; letter-spacing: -1px; line-height: 1.1; margin-bottom: 4px; }
+        .metric-value.cyan { color: var(--accent-cyan); }
+        .metric-value.green { color: var(--accent-green); }
+        .metric-value.amber { color: var(--accent-amber); }
+        .metric-value.blue { color: var(--accent-blue); }
+        .metric-value.red { color: var(--accent-red); }
+        .metric-sub { font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); }
+
+        .card-volume { grid-column: span 3; }
+        .card-approval { grid-column: span 3; }
+        .card-fraud { grid-column: span 3; }
+        .card-settlement { grid-column: span 3; }
+        .card-map { grid-column: span 8; }
+        .card-event-log { grid-column: span 4; }
+        .card-chart-volume { grid-column: span 8; }
+        .card-chart-methods { grid-column: span 4; }
+        .card-live-table { grid-column: span 12; }
+        
+        .card-escrow-controls { grid-column: span 12; }
+        .card-escrow-chart { grid-column: span 6; height: 350px; }
+        .card-escrow-top { grid-column: span 6; height: 350px; }
+        .card-escrow-data { grid-column: span 12; }
+
+        .map-container { position: relative; width: 100%; height: 340px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-subtle); background: #0a0d14; }
+        #worldMap { width: 100%; height: 100%; z-index: 1; }
+        .leaflet-container { background: #0a0d14 !important; font-family: var(--font-mono) !important; }
+        .leaflet-tile-pane { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+        .leaflet-popup-content-wrapper { background: rgba(16, 20, 30, 0.95) !important; color: var(--text-primary) !important; border: 1px solid var(--border-medium) !important; border-radius: 8px !important; font-family: var(--font-mono) !important; font-size: 11px !important; }
+        .leaflet-popup-tip { background: rgba(16, 20, 30, 0.95) !important; }
+        
+        .map-hub-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.9); position: relative; z-index: 2; }
+        .map-hub-label { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-family: var(--font-mono); font-size: 9px; color: var(--text-secondary); white-space: nowrap; background: rgba(10, 13, 20, 0.85); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-subtle); pointer-events: none; }
+
+        .chart-container { position: relative; width: 100%; height: 200px; }
+        .chart-container-sm { position: relative; width: 100%; height: 180px; }
+        .chart-container-lg { position: relative; width: 100%; height: 280px; }
+
+        .table-wrapper { overflow-x: auto; max-height: 320px; overflow-y: auto; border-radius: 8px; border: 1px solid var(--border-subtle); }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--font-mono); }
+        .data-table th { position: sticky; top: 0; background: #12161f; padding: 9px 12px; text-align: left; font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-subtle); z-index: 2; }
+        .data-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text-secondary); }
+        .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .data-table .amount { color: var(--text-primary); font-weight: 600; }
+        .status-approved { color: var(--accent-green); }
+        .status-declined { color: var(--accent-red); }
+        .status-pending { color: var(--accent-amber); }
+
+        .event-log { display: flex; flex-direction: column; gap: 6px; max-height: 340px; overflow-y: auto; font-family: var(--font-mono); font-size: 11px; }
+        .log-entry { display: flex; gap: 8px; padding: 6px 8px; border-radius: 6px; background: rgba(255,255,255,0.02); border-left: 2px solid var(--border-subtle); animation: slide-in 0.3s ease-out; }
+        @keyframes slide-in { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+        .log-entry.info { border-left-color: var(--accent-blue); }
+        .log-entry.success { border-left-color: var(--accent-green); }
+        .log-entry.warn { border-left-color: var(--accent-amber); }
+        .log-entry.error { border-left-color: var(--accent-red); }
+        .log-time { color: var(--text-muted); flex-shrink: 0; }
+
+        .date-input, .select-input { background: var(--bg-surface); border: 1px solid var(--border-medium); color: var(--text-primary); padding: 6px 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 12px; outline: none; }
+        .date-input::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        .select-input option { background: var(--bg-deep); color: var(--text-primary); }
+        
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600; font-size: 12px; cursor: pointer; transition: var(--transition); font-family: var(--font-sans); }
+        .btn-primary { background: var(--accent-blue); color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-success { background: var(--accent-green); color: #000; }
+        .btn-success:hover { background: #059669; }
+        .btn-outline { background: transparent; border: 1px solid var(--border-medium); color: var(--text-primary); }
+        .btn-outline:hover { background: rgba(255,255,255,0.05); }
+
+        .escrow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 10px; }
+        .escrow-sector-card { background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 16px; position: relative; overflow: hidden; }
+        .escrow-sector-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--sector-color, var(--accent-cyan)); }
+        .escrow-sector-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed rgba(255,255,255,0.1); }
+        .escrow-sector-title { font-weight: 600; font-size: 13px; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+        .escrow-sector-total { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--sector-color, var(--accent-cyan)); }
+        .escrow-company-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+        .escrow-company-info { display: flex; justify-content: space-between; font-size: 11px; font-family: var(--font-mono); }
+        .escrow-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+        .escrow-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; background: var(--sector-color); opacity: 0.8; }
+
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(5, 7, 10, 0.85); backdrop-filter: blur(10px);
+            z-index: 10000; justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: var(--bg-deep); border: 1px solid var(--border-medium);
+            border-radius: var(--radius-card); width: 100%; max-width: 1200px;
+            max-height: 90vh; display: flex; flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); overflow: hidden;
+        }
+        .modal-header {
+            padding: 16px 20px; border-bottom: 1px solid var(--border-subtle);
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--bg-surface);
+        }
+        .modal-body { padding: 0; overflow-y: auto; flex: 1; }
+        .modal-close { cursor: pointer; font-size: 20px; color: var(--text-muted); transition: var(--transition); }
+        .modal-close:hover { color: var(--text-primary); }
+        
+        .filter-bar {
+            display: flex; gap: 12px; padding: 16px 20px;
+            background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-subtle);
+            align-items: flex-end; flex-wrap: wrap;
+        }
+
+        @media (max-width: 1200px) {
+            .card-volume, .card-approval, .card-fraud, .card-settlement { grid-column: span 6; }
+            .card-map, .card-chart-volume, .card-chart-methods, .card-event-log { grid-column: span 12; }
+            .card-escrow-chart, .card-escrow-top { grid-column: span 12; }
+        }
+        @media (max-width: 768px) {
+            .app-shell { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+            .card-volume, .card-approval, .card-fraud, .card-settlement { grid-column: span 12; }
+            .map-container { height: 260px; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+        }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<div class="app-shell" id="appShell">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="logo.png" alt="FinoraQi Logo" class="brand-logo" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'40\' fill=\'none\' stroke=\'%2334d399\' stroke-width=\'10\'/></svg>';">
+            FinoraQi<span style="color:var(--accent-blue);font-weight:400;font-size:12px;">®</span>
+        </div>
+
+        <a href="index.html" class="nav-item back-btn">
+            <span class="icon">←</span> Voltar ao Index
+        </a>
+
+        <div class="sidebar-label">Módulos</div>
+        <a class="nav-item active" data-view="view-overview" onclick="switchView('view-overview')"><span class="icon">◈</span> Visão Geral</a>
+        <a class="nav-item" data-view="view-transactions" onclick="switchView('view-transactions')"><span class="icon">◎</span> Transações B2B/B2C</a>
+        <a class="nav-item" data-view="view-score" onclick="switchView('view-score')"><span class="icon">◇</span> Score & Analytics</a>
+        <a class="nav-item" data-view="view-fraud" onclick="switchView('view-fraud')"><span class="icon">⚠</span> Detecção de Fraude</a>
+        <a class="nav-item" data-view="view-escrow" onclick="switchView('view-escrow')"><span class="icon">🛡️</span> Ecossistema (LOWDATAESC)</a>
+
+        <div class="sidebar-label" style="margin-top:auto;">Sistema</div>
+        <a class="nav-item" href="automl.html" target="_blank">
+            <span class="icon">↗</span> RatingPlus AutoML
+        </a>
+    </aside>
+
+    <!-- MAIN AREA -->
+    <main class="main-area">
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="status-connection">
+                    <span class="status-dot"></span>
+                    <span id="connStatus">LIVE STREAM</span>
+                </div>
+                <div class="server-clock" id="serverClock">--:--:-- UTC</div>
+                <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);" id="latencyBadge">latência: 12ms</span>
+            </div>
+            <div class="topbar-filters">
+                <button class="btn btn-outline" onclick="window.location.href='index.html'">
+                    <span>←</span> Voltar
+                </button>
+                <button class="btn btn-primary" onclick="FullDataView.open()">
+                    <span>📂</span> Ver Base Completa
+                </button>
+            </div>
+        </header>
+
+        <!-- SPA VIEWS -->
+        <div class="views-container">
+
+            <!-- VIEW 1: VISÃO GERAL -->
+            <div class="view-section active" id="view-overview">
+                <div class="bento-grid">
+                    <div class="bento-card card-volume">
+                        <div class="card-header">
+                            <span class="card-label">Volume Transacionado</span>
+                            <span class="card-badge info" id="txnRateBadge">0 txn/s</span>
+                        </div>
+                        <div class="metric-value cyan" id="totalVolume">R$ 500,0 bi</div>
+                        <div class="metric-sub" id="volumeSub">projetado em 3 anos</div>
+                    </div>
+
+                    <div class="bento-card card-approval">
+                        <div class="card-header">
+                            <span class="card-label">Score Médio</span>
+                            <span class="card-badge" id="approvalBadge">—</span>
+                        </div>
+                        <div class="metric-value green" id="approvalRate">750</div>
+                        <div class="metric-sub" id="approvalSub">vs. média 680</div>
+                    </div>
+
+                    <div class="bento-card card-fraud">
+                        <div class="card-header">
+                            <span class="card-label">Alertas de Risco</span>
+                            <span class="card-badge danger" id="fraudBadge">0</span>
+                        </div>
+                        <div class="metric-value red" id="fraudCount">0</div>
+                        <div class="metric-sub">outliers sinalizados</div>
+                    </div>
+
+                    <div class="bento-card card-settlement">
+                        <div class="card-header">
+                            <span class="card-label">Yield Acumulado</span>
+                            <span class="card-badge warn">Liquidando</span>
+                        </div>
+                        <div class="metric-value amber" id="yieldValue">R$ 0,00</div>
+                        <div class="metric-sub">base para distribuição</div>
+                    </div>
+
+                    <div class="bento-card card-map">
+                        <div class="card-header">
+                            <span class="card-label">Distribuição Global</span>
+                            <span class="card-badge info">Hubs Ativos</span>
+                        </div>
+                        <div class="map-container">
+                            <div id="worldMap"></div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card card-event-log">
+                        <div class="card-header">
+                            <span class="card-label">Stream de Operações</span>
+                            <span class="card-badge">Live</span>
+                        </div>
+                        <div class="event-log" id="eventLog"></div>
+                    </div>
+
+                    <div class="bento-card card-chart-volume">
+                        <div class="card-header">
+                            <span class="card-label">Throughput de Transações</span>
+                        </div>
+                        <div class="chart-container"><canvas id="chartVolume"></canvas></div>
+                    </div>
+
+                    <div class="bento-card card-chart-methods">
+                        <div class="card-header">
+                            <span class="card-label">Mix de Segmentos</span>
+                        </div>
+                        <div class="chart-container-sm"><canvas id="chartMethods"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: TRANSAÇÕES -->
+            <div class="view-section" id="view-transactions">
+                <div class="bento-grid">
+                    <div class="bento-card card-live-table" style="grid-column: span 12; height: calc(100vh - 180px);">
+                        <div class="card-header">
+                            <span class="card-label">Hard Data Panel — Transações Recentes</span>
+                            <span class="card-badge" id="liveTableBadge">0 registros</span>
+                        </div>
+                        <div class="table-wrapper" style="max-height: calc(100% - 50px);">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data/Hora</th>
+                                        <th>Empresa / Cliente</th>
+                                        <th>Setor</th>
+                                        <th>Volume</th>
+                                        <th>Yield Gerado (2.5%)</th>
+                                        <th>Status</th>
+                                        <th>Risco / Z-Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="liveTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: SCORE & ANALYTICS -->
+            <div class="view-section" id="view-score">
+                <div class="bento-grid">
+                    <div class="bento-card" style="grid-column: span 12;">
+                        <div class="card-header">
+                            <span class="card-label">Distribuição de Score B2C (Simulação)</span>
+                        </div>
+                        <div class="chart-container-lg"><canvas id="chartScore"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 4: FRAUDE -->
+            <div class="view-section" id="view-fraud">
+                <div class="bento-grid">
+                    <div class="bento-card" style="grid-column: span 12;">
+                        <div class="card-header">
+                            <span class="card-label">Monitoramento de Outliers e Fraude</span>
+                        </div>
+                        <div class="event-log" id="fraudLog" style="max-height: 500px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 5: ECOSSISTEMA (LOWDATAESC) -->
+            <div class="view-section" id="view-escrow">
+                <div class="bento-grid">
+                    
+                    <!-- Controles de Filtro/Exportação -->
+                    <div class="bento-card card-escrow-controls">
+                        <div class="card-header">
+                            <span class="card-label">Relatório de Yield e Escrow</span>
+                            <span class="card-badge info" id="reportTotalBadge">Total Filtrado: R$ 0,00</span>
+                        </div>
+                        <div style="display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <div style="display:flex; flex-direction:column; gap:4px;">
+                                <label style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Data Inicial</label>
+                                <input type="date" id="dateStart" class="date-input">
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:4px;">
+                                <label style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Data Final</label>
+                                <input type="date" id="dateEnd" class="date-input">
+                            </div>
+                            <button class="btn btn-primary" onclick="ReportEngine.applyFilter()">Filtrar Dados</button>
+                            <div style="flex:1;"></div>
+                            <button class="btn btn-success" onclick="ReportEngine.exportData('xlsx')"><span>📥</span> Salvar .XLSX</button>
+                            <button class="btn btn-outline" onclick="ReportEngine.exportData('csv')"><span>📄</span> Salvar .CSV</button>
+                        </div>
+                    </div>
+
+                    <!-- Comparação por Setor -->
+                    <div class="bento-card card-escrow-chart">
+                        <div class="card-header">
+                            <span class="card-label">Comparativo de Yield por Setor</span>
+                        </div>
+                        <div class="chart-container"><canvas id="chartSectorYield"></canvas></div>
+                    </div>
+
+                    <!-- Top Empresas -->
+                    <div class="bento-card card-escrow-top">
+                        <div class="card-header">
+                            <span class="card-label">Top 10 Empresas por Yield</span>
+                        </div>
+                        <div class="table-wrapper" style="border: none;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Empresa</th>
+                                        <th>Setor</th>
+                                        <th>Yield Acumulado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topCompaniesBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Detalhamento -->
+                    <div class="bento-card card-escrow-data">
+                        <div class="card-header">
+                            <span class="card-label">Distribuição de Carteiras por Setor/Empresa</span>
+                            <span class="card-badge success" id="totalEscrowBadge">Total: R$ 0,00</span>
+                        </div>
+                        <div class="escrow-grid" id="escrowContainer"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- MODAL: FULL DATA VIEW -->
+<div class="modal-overlay" id="fullDataModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div>
+                <h2 style="font-size: 16px; color: var(--text-primary);">Base Completa de Transações</h2>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Análise detalhada de todos os registros</p>
+            </div>
+            <span class="modal-close" onclick="FullDataView.close()">✕</span>
+        </div>
+        
+        <div class="filter-bar">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Empresa</label>
+                <select id="filterCompany" class="select-input" style="width: 220px;">
+                    <option value="all">Todas as Empresas</option>
+                </select>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Yield Mínimo (R$)</label>
+                <input type="number" id="filterYieldMin" class="date-input" placeholder="Ex: 1000" style="width: 120px;">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Yield Máximo (R$)</label>
+                <input type="number" id="filterYieldMax" class="date-input" placeholder="Ex: 500000" style="width: 120px;">
+            </div>
+            <button class="btn btn-primary" onclick="FullDataView.render()">Filtrar</button>
+            <button class="btn btn-outline" onclick="FullDataView.clearFilters()">Limpar</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="table-wrapper" style="max-height: 60vh; border: none; border-radius: 0;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>ID Transação</th>
+                            <th>Empresa</th>
+                            <th>Setor</th>
+                            <th>Região</th>
+                            <th>Volume Bruto</th>
+                            <th>Yield Líquido</th>
+                            <th>Status</th>
+                            <th>Z-Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fullTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-header" style="border-top: 1px solid var(--border-subtle); border-bottom: none; justify-content: flex-end;">
+            <span style="font-size: 12px; color: var(--text-muted); margin-right: 16px;" id="fullDataCount">0 registros</span>
+            <button class="btn btn-outline" onclick="FullDataView.close()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+const DATA_COMPANIES = [
+    { name: 'BB Asset', sector: 'Gestoras', region: 'BR', ticketMin: 1000000, ticketMax: 50000000, color: '#3b82f6' },
+    { name: 'Itaú Asset', sector: 'Gestoras', region: 'BR', ticketMin: 1000000, ticketMax: 50000000, color: '#3b82f6' },
+    { name: 'Bradesco Asset', sector: 'Gestoras', region: 'BR', ticketMin: 1000000, ticketMax: 40000000, color: '#3b82f6' },
+    { name: 'Caixa Asset', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 30000000, color: '#3b82f6' },
+    { name: 'BTG Pactual', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 30000000, color: '#3b82f6' },
+    { name: 'XP Asset', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 20000000, color: '#3b82f6' },
+    { name: 'Santander Asset', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 20000000, color: '#3b82f6' },
+    { name: 'Safra Asset', sector: 'Gestoras', region: 'BR', ticketMin: 1000000, ticketMax: 40000000, color: '#3b82f6' },
+    { name: 'Vinci Partners', sector: 'Gestoras', region: 'BR', ticketMin: 1000000, ticketMax: 35000000, color: '#3b82f6' },
+    { name: 'JGP', sector: 'Gestoras', region: 'BR', ticketMin: 1000000, ticketMax: 25000000, color: '#3b82f6' },
+    { name: 'Kinea Investimentos', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 20000000, color: '#3b82f6' },
+    { name: 'MAG Investimentos', sector: 'Gestoras', region: 'BR', ticketMin: 1000000, ticketMax: 30000000, color: '#3b82f6' },
+    { name: 'SPX Capital', sector: 'Gestoras', region: 'BR', ticketMin: 1000000, ticketMax: 25000000, color: '#3b82f6' },
+    { name: 'Ibiuna Investimentos', sector: 'Gestoras', region: 'BR', ticketMin: 1000000, ticketMax: 20000000, color: '#3b82f6' },
+    { name: 'Régia Capital', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 15000000, color: '#3b82f6' },
+    { name: 'Vinland Capital', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 10000000, color: '#3b82f6' },
+    { name: 'Tarpon Gestora', sector: 'Gestoras', region: 'BR', ticketMin: 1000000, ticketMax: 50000000, color: '#3b82f6' },
+    { name: 'AZ Quest', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 20000000, color: '#3b82f6' },
+    { name: 'Occam Brasil', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 15000000, color: '#3b82f6' },
+    { name: 'BW Gestão', sector: 'Gestoras', region: 'BR', ticketMin: 1000000, ticketMax: 30000000, color: '#3b82f6' },
+    { name: 'Capitânia S.A.', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 10000000, color: '#3b82f6' },
+    { name: 'Icatu Vanguarda', sector: 'Gestoras', region: 'BR', ticketMin: 100000, ticketMax: 5000000, color: '#3b82f6' },
+    { name: 'Western Asset', sector: 'Gestoras', region: 'Global', ticketMin: 1000000, ticketMax: 40000000, color: '#3b82f6' },
+    { name: 'Solis Investimentos', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 15000000, color: '#3b82f6' },
+    { name: 'Daycoval Asset', sector: 'Gestoras', region: 'BR', ticketMin: 100000, ticketMax: 5000000, color: '#3b82f6' },
+    { name: 'Mongeral Aegon', sector: 'Gestoras', region: 'BR', ticketMin: 50000, ticketMax: 2000000, color: '#3b82f6' },
+    { name: 'Mapfre Investimentos', sector: 'Gestoras', region: 'Global', ticketMin: 100000, ticketMax: 5000000, color: '#3b82f6' },
+    { name: 'XP Vista Asset', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 15000000, color: '#3b82f6' },
+    { name: 'BB Gestão de Recursos', sector: 'Gestoras', region: 'BR', ticketMin: 1000000, ticketMax: 50000000, color: '#3b82f6' },
+    { name: 'Garde Asset', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 15000000, color: '#3b82f6' },
+    { name: 'Blueline Asset', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 10000000, color: '#3b82f6' },
+    { name: 'ASA Asset', sector: 'Gestoras', region: 'BR', ticketMin: 100000, ticketMax: 5000000, color: '#3b82f6' },
+    { name: 'TRUXT Investimentos', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 15000000, color: '#3b82f6' },
+    { name: 'STK Capital', sector: 'Gestoras', region: 'BR', ticketMin: 100000, ticketMax: 5000000, color: '#3b82f6' },
+    { name: 'Kondor Invest', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 10000000, color: '#3b82f6' },
+    { name: 'Butiá Gestão', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 15000000, color: '#3b82f6' },
+    { name: 'Clave Gestora', sector: 'Gestoras', region: 'BR', ticketMin: 100000, ticketMax: 5000000, color: '#3b82f6' },
+    { name: 'Leto Capital', sector: 'Gestoras', region: 'BR', ticketMin: 500000, ticketMax: 20000000, color: '#3b82f6' },
+    { name: 'Brainvest', sector: 'Family Offices', region: 'Global', ticketMin: 500000, ticketMax: 10000000, color: '#f59e0b' },
+    { name: 'Portofino', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 8000000, color: '#f59e0b' },
+    { name: 'Pragma', sector: 'Family Offices', region: 'BR', ticketMin: 1000000, ticketMax: 15000000, color: '#f59e0b' },
+    { name: 'Garín Investimentos', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 10000000, color: '#f59e0b' },
+    { name: 'Apex Capital', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 12000000, color: '#f59e0b' },
+    { name: 'Ghia Multi Family', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 8000000, color: '#f59e0b' },
+    { name: 'Véneto Family Office', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 8000000, color: '#f59e0b' },
+    { name: 'Naman Capital', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 10000000, color: '#f59e0b' },
+    { name: 'Luxor', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 15000000, color: '#f59e0b' },
+    { name: 'Julius Baer FO', sector: 'Family Offices', region: 'Global', ticketMin: 1000000, ticketMax: 50000000, color: '#f59e0b' },
+    { name: 'Tera Capital', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 10000000, color: '#f59e0b' },
+    { name: 'Vitra Capital', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 10000000, color: '#f59e0b' },
+    { name: 'Sten Gestão', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 8000000, color: '#f59e0b' },
+    { name: 'Jera Capital', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 10000000, color: '#f59e0b' },
+    { name: 'Turim MFO', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 15000000, color: '#f59e0b' },
+    { name: 'Somma MFO', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 12000000, color: '#f59e0b' },
+    { name: 'Gerval Investimentos', sector: 'Family Offices', region: 'BR', ticketMin: 500000, ticketMax: 10000000, color: '#f59e0b' },
+    { name: 'Península Participações', sector: 'Family Offices', region: 'BR', ticketMin: 1000000, ticketMax: 30000000, color: '#f59e0b' },
+    { name: 'Nubank', sector: 'Fintechs B2C', region: 'BR', ticketMin: 100, ticketMax: 15000, color: '#34d399' },
+    { name: 'Inter', sector: 'Fintechs B2C', region: 'BR', ticketMin: 100, ticketMax: 20000, color: '#34d399' },
+    { name: 'C6 Bank', sector: 'Fintechs B2C', region: 'BR', ticketMin: 100, ticketMax: 25000, color: '#34d399' },
+    { name: 'Neon', sector: 'Fintechs B2C', region: 'BR', ticketMin: 50, ticketMax: 5000, color: '#34d399' },
+    { name: 'PicPay', sector: 'Fintechs B2C', region: 'BR', ticketMin: 50, ticketMax: 3000, color: '#34d399' },
+    { name: 'iCred', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 50000, ticketMax: 1000000, color: '#34d399' },
+    { name: 'Creditas', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 20000, ticketMax: 500000, color: '#34d399' },
+    { name: 'Geru', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 5000, ticketMax: 100000, color: '#34d399' },
+    { name: 'Agibank', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 100, ticketMax: 10000, color: '#34d399' },
+    { name: 'Parati CFI', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 1000, ticketMax: 50000, color: '#34d399' },
+    { name: 'Facta Financeira', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 5000, ticketMax: 200000, color: '#34d399' },
+    { name: 'Simplic', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 1000, ticketMax: 50000, color: '#34d399' },
+    { name: 'Bom Pra Crédito', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 500, ticketMax: 30000, color: '#34d399' },
+    { name: 'FinanZero', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 1000, ticketMax: 50000, color: '#34d399' },
+    { name: 'Easycredito', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 500, ticketMax: 40000, color: '#34d399' },
+    { name: 'Olé Consignado', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 1000, ticketMax: 50000, color: '#34d399' },
+    { name: 'Lendico', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 10000, ticketMax: 300000, color: '#34d399' },
+    { name: 'CloQ', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 100, ticketMax: 10000, color: '#34d399' },
+    { name: 'Ume', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 500, ticketMax: 20000, color: '#34d399' },
+    { name: 'FAZ Cred', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 1000, ticketMax: 50000, color: '#34d399' },
+    { name: 'Presença FIDC', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 10000, ticketMax: 100000, color: '#34d399' },
+    { name: 'NG.CASH', sector: 'Fintechs B2C', region: 'BR', ticketMin: 10, ticketMax: 5000, color: '#34d399' },
+    { name: 'Zippi', sector: 'Fintechs Crédito', region: 'BR', ticketMin: 100, ticketMax: 50000, color: '#34d399' },
+    { name: 'Ualá', sector: 'Fintechs B2C', region: 'AR', ticketMin: 100, ticketMax: 8000, color: '#34d399' },
+    { name: 'Clara', sector: 'B2B Cash Pooling', region: 'LatAm', ticketMin: 50000, ticketMax: 500000, color: '#a78bfa' },
+    { name: 'Conta Simples', sector: 'B2B Cash Pooling', region: 'BR', ticketMin: 10000, ticketMax: 200000, color: '#a78bfa' },
+    { name: 'Onfly', sector: 'B2B Cash Pooling', region: 'BR', ticketMin: 10000, ticketMax: 150000, color: '#a78bfa' },
+    { name: 'F360', sector: 'B2B Cash Pooling', region: 'BR', ticketMin: 10000, ticketMax: 300000, color: '#a78bfa' },
+    { name: 'Cora', sector: 'B2B Cash Pooling', region: 'BR', ticketMin: 5000, ticketMax: 100000, color: '#a78bfa' },
+    { name: 'Contabilizei', sector: 'B2B Cash Pooling', region: 'BR', ticketMin: 1000, ticketMax: 50000, color: '#a78bfa' },
+    { name: 'Omie', sector: 'B2B Cash Pooling', region: 'BR', ticketMin: 5000, ticketMax: 200000, color: '#a78bfa' },
+    { name: 'Conta Azul', sector: 'B2B Cash Pooling', region: 'BR', ticketMin: 5000, ticketMax: 150000, color: '#a78bfa' },
+    { name: 'Nibo', sector: 'B2B Cash Pooling', region: 'BR', ticketMin: 1000, ticketMax: 50000, color: '#a78bfa' },
+    { name: 'Cobase', sector: 'B2B Cash Pooling', region: 'EU', ticketMin: 50000, ticketMax: 2000000, color: '#a78bfa' },
+    { name: 'Americanas', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 500000, ticketMax: 10000000, color: '#f87171' },
+    { name: 'Oi', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 1000000, ticketMax: 50000000, color: '#f87171' },
+    { name: 'Raízen', sector: 'Recuperação Extrajudicial', region: 'BR', ticketMin: 2000000, ticketMax: 60000000, color: '#f87171' },
+    { name: 'AgroGalaxy', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 500000, ticketMax: 5000000, color: '#f87171' },
+    { name: 'GPA', sector: 'Recuperação Extrajudicial', region: 'BR', ticketMin: 1000000, ticketMax: 20000000, color: '#f87171' },
+    { name: 'Azul', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 500000, ticketMax: 15000000, color: '#f87171' },
+    { name: 'Ambipar', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 1000000, ticketMax: 20000000, color: '#f87171' },
+    { name: 'Bombril', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 100000, ticketMax: 2000000, color: '#f87171' },
+    { name: 'Light S/A', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 1000000, ticketMax: 30000000, color: '#f87171' },
+    { name: '123 Milhas', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 100000, ticketMax: 5000000, color: '#f87171' },
+    { name: 'Grupo Petrópolis', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 500000, ticketMax: 15000000, color: '#f87171' },
+    { name: 'Casas Bahia', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 500000, ticketMax: 10000000, color: '#f87171' },
+    { name: 'Tok&Stok', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 100000, ticketMax: 5000000, color: '#f87171' },
+    { name: 'Marabraz', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 100000, ticketMax: 3000000, color: '#f87171' },
+    { name: 'Elfa', sector: 'Recuperação Extrajudicial', region: 'BR', ticketMin: 500000, ticketMax: 8000000, color: '#f87171' },
+    { name: 'Botafogo SAF', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 100000, ticketMax: 5000000, color: '#f87171' },
+    { name: 'Gennius (Habib\'s)', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 100000, ticketMax: 3000000, color: '#f87171' },
+    { name: 'Tex Renaux', sector: 'Recuperação Extrajudicial', region: 'BR', ticketMin: 50000, ticketMax: 2000000, color: '#f87171' },
+    { name: 'Montesanto Tavares', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 500000, ticketMax: 10000000, color: '#f87171' },
+    { name: 'Braskem', sector: 'Recuperação Extrajudicial', region: 'BR', ticketMin: 2000000, ticketMax: 80000000, color: '#f87171' },
+    { name: 'CVLB (Casa&Video)', sector: 'Recuperação Judicial', region: 'BR', ticketMin: 100000, ticketMax: 3000000, color: '#f87171' },
+    { name: 'Klar', sector: 'Fintechs LatAm', region: 'MX', ticketMin: 500, ticketMax: 20000, color: '#22d3ee' },
+    { name: 'Stori', sector: 'Fintechs LatAm', region: 'MX', ticketMin: 500, ticketMax: 15000, color: '#22d3ee' },
+    { name: 'Nequi', sector: 'Fintechs LatAm', region: 'CO', ticketMin: 100, ticketMax: 10000, color: '#22d3ee' },
+    { name: 'Daviplata', sector: 'Fintechs LatAm', region: 'CO', ticketMin: 100, ticketMax: 5000, color: '#22d3ee' },
+    { name: 'RappiPay', sector: 'Fintechs LatAm', region: 'CO', ticketMin: 50, ticketMax: 5000, color: '#22d3ee' },
+    { name: 'Mercado Pago', sector: 'Fintechs LatAm', region: 'LatAm', ticketMin: 100, ticketMax: 30000, color: '#22d3ee' },
+    { name: 'R2', sector: 'Fintechs LatAm', region: 'MX', ticketMin: 1000, ticketMax: 50000, color: '#22d3ee' },
+    { name: 'Galgo', sector: 'Fintechs LatAm', region: 'CL', ticketMin: 5000, ticketMax: 100000, color: '#22d3ee' },
+    { name: 'Sempli', sector: 'Fintechs LatAm', region: 'CO', ticketMin: 10000, ticketMax: 200000, color: '#22d3ee' },
+    { name: 'ABL Capital', sector: 'Fintechs LatAm', region: 'CO', ticketMin: 10000, ticketMax: 300000, color: '#22d3ee' },
+    { name: 'Bold', sector: 'Fintechs LatAm', region: 'CO', ticketMin: 100, ticketMax: 10000, color: '#22d3ee' },
+    { name: 'Plata', sector: 'Fintechs LatAm', region: 'MX', ticketMin: 1000, ticketMax: 50000, color: '#22d3ee' },
+    { name: 'Creditea', sector: 'Fintechs LatAm', region: 'MX', ticketMin: 1000, ticketMax: 30000, color: '#22d3ee' },
+    { name: 'Linero', sector: 'Fintechs LatAm', region: 'MX', ticketMin: 500, ticketMax: 20000, color: '#22d3ee' },
+    { name: 'Kueski', sector: 'Fintechs LatAm', region: 'MX', ticketMin: 100, ticketMax: 15000, color: '#22d3ee' },
+    { name: 'Addi', sector: 'Fintechs LatAm', region: 'CO', ticketMin: 50, ticketMax: 10000, color: '#22d3ee' },
+    { name: 'Affinity', sector: 'Fintechs LatAm', region: 'IN', ticketMin: 100, ticketMax: 20000, color: '#22d3ee' },
+    { name: 'Trusting Social', sector: 'Fintechs LatAm', region: 'ASIA', ticketMin: 50, ticketMax: 5000, color: '#22d3ee' },
+    { name: 'Kredivo', sector: 'Fintechs LatAm', region: 'ASIA', ticketMin: 100, ticketMax: 15000, color: '#22d3ee' },
+    { name: 'Jenfi', sector: 'Fintechs LatAm', region: 'ASIA', ticketMin: 1000, ticketMax: 50000, color: '#22d3ee' },
+    { name: 'Revolut', sector: 'Fintechs Globais', region: 'Global', ticketMin: 100, ticketMax: 50000, color: '#818cf8' },
+    { name: 'N26', sector: 'Fintechs Globais', region: 'EU', ticketMin: 100, ticketMax: 40000, color: '#818cf8' },
+    { name: 'Monzo', sector: 'Fintechs Globais', region: 'UK', ticketMin: 100, ticketMax: 30000, color: '#818cf8' },
+    { name: 'Chime', sector: 'Fintechs Globais', region: 'US', ticketMin: 100, ticketMax: 20000, color: '#818cf8' },
+    { name: 'Plaid', sector: 'Infraestrutura Open Finance', region: 'US', ticketMin: 10000, ticketMax: 500000, color: '#c084fc' },
+    { name: 'TrueLayer', sector: 'Infraestrutura Open Finance', region: 'UK', ticketMin: 10000, ticketMax: 300000, color: '#c084fc' },
+    { name: 'Belvo', sector: 'Infraestrutura Open Finance', region: 'LatAm', ticketMin: 5000, ticketMax: 200000, color: '#c084fc' },
+    { name: 'Pluggy', sector: 'Infraestrutura Open Finance', region: 'BR', ticketMin: 5000, ticketMax: 150000, color: '#c084fc' },
+    { name: 'Tink', sector: 'Infraestrutura Open Finance', region: 'EU', ticketMin: 10000, ticketMax: 250000, color: '#c084fc' }
+];
+
+const REGION_COORDS = {
+    'BR': { lat: -14.2350, lng: -51.9253, name: 'Brasil' },
+    'MX': { lat: 23.6345, lng: -102.5528, name: 'México' },
+    'CO': { lat: 4.5709, lng: -74.2973, name: 'Colômbia' },
+    'AR': { lat: -38.4161, lng: -63.6167, name: 'Argentina' },
+    'CL': { lat: -33.4489, lng: -70.6693, name: 'Chile' },
+    'US': { lat: 37.0902, lng: -95.7129, name: 'EUA' },
+    'EU': { lat: 51.1657, lng: 10.4515, name: 'Europa' },
+    'UK': { lat: 55.3781, lng: -3.4360, name: 'Reino Unido' },
+    'IN': { lat: 20.5937, lng: 78.9629, name: 'Índia' },
+    'ASIA': { lat: 1.3521, lng: 103.8198, name: 'Ásia' },
+    'LatAm': { lat: -15.0000, lng: -60.0000, name: 'LatAm Hub' },
+    'Global': { lat: 40.4168, lng: -3.7038, name: 'Global' }
+};
+
+const CONFIG = { tickInterval: 1200, maxTableRows: 50, maxLogEntries: 60 };
+const YIELD_RATE = 0.025;
+const YIELD_NET = 0.020;
+
+const STATE = {
+    totalVolumeBRL: 500_000_000_000,
+    totalYieldBRL: 0,
+    totalTransactions: 0,
+    fraudCount: 0,
+    hourlyVolume: new Array(24).fill(0).map(() => Math.floor(Math.random() * 500) + 100),
+    sectorYields: {},
+    transactions: [],
+    escrowBalances: {},
+    scoreData: new Array(10).fill(0) // Histograma simulado 0-1000
+};
+
+DATA_COMPANIES.forEach(c => {
+    if (!STATE.escrowBalances[c.sector]) STATE.escrowBalances[c.sector] = {};
+    STATE.escrowBalances[c.sector][c.name] = 0;
+    if (!STATE.sectorYields[c.sector]) STATE.sectorYields[c.sector] = 0;
+});
+
+const $ = (sel) => document.querySelector(sel);
+const rand = (min, max) => Math.random() * (max - min) + min;
+const pad = (n) => String(n).padStart(2, '0');
+const formatBRL = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const timestamp = (d = new Date()) => `${d.toISOString().split('T')[0]} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+
+/* SPA ROUTING */
+function switchView(viewId) {
+    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+    
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.querySelector(`.nav-item[data-view="${viewId}"]`).classList.add('active');
+
+    // Forçar redimensionamento de gráficos e mapas ao mudar de aba
+    setTimeout(() => {
+        if (viewId === 'view-overview') {
+            if(map) map.invalidateSize();
+            if(chartVolumeInstance) chartVolumeInstance.resize();
+            if(chartMethodsInstance) chartMethodsInstance.resize();
+        }
+        if (viewId === 'view-score' && chartScoreInstance) chartScoreInstance.resize();
+        if (viewId === 'view-escrow' && chartSectorYieldInstance) chartSectorYieldInstance.resize();
+    }, 100);
+}
+
+function generateTransaction(customDate = null) {
+    const company = DATA_COMPANIES[Math.floor(Math.random() * DATA_COMPANIES.length)];
+    const amount = rand(company.ticketMin, company.ticketMax);
+    const feeValue = amount * YIELD_RATE;
+    const netYield = amount * YIELD_NET;
+    const roll = Math.random();
+    let status = roll < 0.92 ? 'approved' : (roll < 0.98 ? 'declined' : 'pending');
+    let riskScore = company.sector.includes('Recuperação') ? rand(0.6, 0.99) : rand(0.01, 0.4);
+    const isSuspicious = riskScore > 0.8;
+    const d = customDate || new Date();
+
+    return {
+        id: 'txn_' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+        dateObj: d,
+        dateStr: timestamp(d),
+        company: company.name,
+        sector: company.sector,
+        region: company.region,
+        color: company.color,
+        amount,
+        fee: feeValue,
+        yield: netYield,
+        status,
+        riskScore,
+        isSuspicious
+    };
+}
+
+const LowDataEscrow = {
+    addYield: (sector, company, yieldValue) => {
+        if (STATE.escrowBalances[sector] && STATE.escrowBalances[sector][company] !== undefined) {
+            STATE.escrowBalances[sector][company] += yieldValue;
+            STATE.sectorYields[sector] += yieldValue;
+            LowDataEscrow.render();
+        }
+    },
+    render: () => {
+        // 1. Atualiza Gráfico de Setores
+        if (chartSectorYieldInstance) {
+            chartSectorYieldInstance.data.datasets[0].data = Object.values(STATE.sectorYields);
+            chartSectorYieldInstance.update('none');
+        }
+
+        // 2. Atualiza Top Empresas
+        const allCompanies = [];
+        Object.keys(STATE.escrowBalances).forEach(sector => {
+            Object.entries(STATE.escrowBalances[sector]).forEach(([name, balance]) => {
+                if (balance > 0) {
+                    const compData = DATA_COMPANIES.find(c => c.name === name);
+                    allCompanies.push({ name, sector, balance, color: compData ? compData.color : '#fff' });
+                }
+            });
+        });
+        allCompanies.sort((a, b) => b.balance - a.balance);
+        const top10 = allCompanies.slice(0, 10);
+        
+        const topBody = document.getElementById('topCompaniesBody');
+        if (topBody) {
+            topBody.innerHTML = '';
+            top10.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600; color:var(--text-primary)">${c.name}</td>
+                    <td><span class="card-badge" style="background:${c.color}20; color:${c.color};">${c.sector}</span></td>
+                    <td style="color:var(--accent-amber); font-weight:600;">${formatBRL(c.balance)}</td>
+                `;
+                topBody.appendChild(tr);
+            });
+        }
+
+        // 3. Atualiza Detalhamento por Setor
+        const container = document.getElementById('escrowContainer');
+        if (!container) return;
+        let html = '';
+        let grandTotal = 0;
+
+        Object.keys(STATE.escrowBalances).forEach(sector => {
+            const companies = STATE.escrowBalances[sector];
+            let sectorTotal = 0;
+            Object.values(companies).forEach(val => sectorTotal += val);
+            grandTotal += sectorTotal;
+
+            const firstCompany = Object.keys(companies)[0];
+            const sectorData = DATA_COMPANIES.find(c => c.name === firstCompany);
+            const sectorColor = sectorData ? sectorData.color : '#22d3ee';
+
+            if (sectorTotal === 0) return; 
+
+            html += `
+                <div class="escrow-sector-card" style="--sector-color: ${sectorColor};">
+                    <div class="escrow-sector-header">
+                        <div class="escrow-sector-title">
+                            <span style="background:${sectorColor}; width:8px; height:8px; border-radius:50%; display:inline-block;"></span>
+                            ${sector}
+                        </div>
+                        <div class="escrow-sector-total">${formatBRL(sectorTotal)}</div>
+                    </div>
+                    <div class="escrow-companies-list">
+            `;
+            const sortedCompanies = Object.entries(companies).sort((a, b) => b[1] - a[1]);
+            sortedCompanies.forEach(([company, balance]) => {
+                if (balance === 0) return;
+                const pct = sectorTotal > 0 ? (balance / sectorTotal) * 100 : 0;
+                html += `
+                    <div class="escrow-company-row">
+                        <div class="escrow-company-info">
+                            <span class="escrow-company-name">${company}</span>
+                            <span class="escrow-company-value">${formatBRL(balance)}</span>
+                        </div>
+                        <div class="escrow-bar-bg">
+                            <div class="escrow-bar-fill" style="width: ${pct}%;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div></div>`;
+        });
+
+        container.innerHTML = html;
+        document.getElementById('totalEscrowBadge').textContent = `Total Custodiado: ${formatBRL(grandTotal)}`;
+        STATE.totalYieldBRL = grandTotal;
+        $('#yieldValue').textContent = formatBRL(STATE.totalYieldBRL);
+    }
+};
+
+function updateMetrics(txn) {
+    STATE.totalTransactions++;
+    if (txn.isSuspicious) STATE.fraudCount++;
+    STATE.totalVolumeBRL += txn.amount;
+
+    if (txn.status === 'approved') {
+        LowDataEscrow.addYield(txn.sector, txn.company, txn.yield);
+    }
+
+    $('#totalVolume').textContent = `R$ ${(STATE.totalVolumeBRL / 1e9).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} bi`;
+    $('#fraudCount').textContent = STATE.fraudCount;
+    
+    const score = Math.floor(850 - (txn.riskScore * 300));
+    $('#approvalRate').textContent = score;
+    
+    // Simula histograma de score
+    const scoreBin = Math.floor(score / 100);
+    if (scoreBin >= 0 && scoreBin < 10) {
+        STATE.scoreData[scoreBin]++;
+        if (chartScoreInstance) {
+            chartScoreInstance.data.datasets[0].data = [...STATE.scoreData];
+            chartScoreInstance.update('none');
+        }
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (document.getElementById('dateEnd').value >= todayStr && document.getElementById('dateStart').value <= todayStr) {
+        ReportEngine.filteredData.push(txn);
+        ReportEngine.renderTable();
+    }
+    STATE.transactions.push(txn);
+    
+    const hour = new Date().getUTCHours();
+    STATE.hourlyVolume[hour]++;
+    if (chartVolumeInstance) {
+        chartVolumeInstance.data.datasets[0].data = [...STATE.hourlyVolume];
+        chartVolumeInstance.update('none');
+    }
+    if (chartMethodsInstance) {
+        // Atualiza mix de setores (doughnut)
+        const counts = {};
+        STATE.transactions.forEach(t => counts[t.sector] = (counts[t.sector] || 0) + 1);
+        chartMethodsInstance.data.labels = Object.keys(counts);
+        chartMethodsInstance.data.datasets[0].data = Object.values(counts);
+        chartMethodsInstance.update('none');
+    }
+}
+
+function addToLiveTable(txn) {
+    const tbody = $('#liveTableBody');
+    const row = document.createElement('tr');
+    if (txn.isSuspicious) row.style.background = 'rgba(248, 113, 113, 0.05)';
+
+    const statusClass = txn.status === 'approved' ? 'status-approved' : (txn.status === 'declined' ? 'status-declined' : 'status-pending');
+    const formatVol = (val) => {
+        if (val > 1000000) return `R$ ${(val/1e6).toFixed(1)} mi`;
+        if (val > 1000) return `R$ ${(val/1000).toFixed(0)} k`;
+        return formatBRL(val);
+    };
+
+    row.innerHTML = `
+        <td>${txn.dateStr}</td>
+        <td style="color:var(--text-primary); font-weight:600;">${txn.company}</td>
+        <td><span class="card-badge" style="background:${txn.color}20; color:${txn.color};">${txn.sector}</span></td>
+        <td class="amount">${formatVol(txn.amount)}</td>
+        <td style="color:var(--accent-amber);">${formatVol(txn.yield)}</td>
+        <td class="${statusClass}">${txn.status}</td>
+        <td style="color:${txn.isSuspicious ? 'var(--accent-red)' : 'var(--text-muted)'};">${(txn.riskScore * 100).toFixed(0)}</td>
+    `;
+    tbody.prepend(row);
+    if (tbody.children.length > CONFIG.maxTableRows) tbody.lastChild.remove();
+    $('#liveTableBadge').textContent = `${tbody.children.length} registros`;
+}
+
+function addLogEntry(type, message) {
+    const log = $('#eventLog');
+    if(!log) return;
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type}`;
+    entry.innerHTML = `<span class="log-time">${new Date().toISOString().substring(11,19)}</span><span class="log-msg">${message}</span>`;
+    log.prepend(entry);
+    if (log.children.length > CONFIG.maxLogEntries) log.lastChild.remove();
+    
+    if (type === 'error') {
+        const fLog = $('#fraudLog');
+        if (fLog) {
+            const fEntry = document.createElement('div');
+            fEntry.className = `log-entry ${type}`;
+            fEntry.innerHTML = `<span class="log-time">${new Date().toISOString().substring(11,19)}</span><span class="log-msg">${message}</span>`;
+            fLog.prepend(fEntry);
+        }
+    }
+}
+
+const ReportEngine = {
+    filteredData: [],
+    init: () => {
+        const today = new Date();
+        const lastWeek = new Date();
+        lastWeek.setDate(today.getDate() - 7);
+        document.getElementById('dateStart').value = lastWeek.toISOString().split('T')[0];
+        document.getElementById('dateEnd').value = today.toISOString().split('T')[0];
+
+        for(let i=0; i<100; i++) {
+            const pastDate = new Date();
+            pastDate.setDate(today.getDate() - Math.floor(Math.random() * 7));
+            const txn = generateTransaction(pastDate);
+            if (txn.status === 'approved') LowDataEscrow.addYield(txn.sector, txn.company, txn.yield);
+            STATE.transactions.push(txn);
+        }
+        ReportEngine.applyFilter();
+    },
+    applyFilter: () => {
+        const startStr = document.getElementById('dateStart').value;
+        const endStr = document.getElementById('dateEnd').value;
+        if(!startStr || !endStr) return;
+        const start = new Date(startStr);
+        const end = new Date(endStr);
+        end.setHours(23, 59, 59);
+        ReportEngine.filteredData = STATE.transactions.filter(t => t.dateObj >= start && t.dateObj <= end);
+        ReportEngine.renderTable();
+    },
+    renderTable: () => {
+        let totalYield = 0;
+        ReportEngine.filteredData.forEach(t => totalYield += t.yield);
+        document.getElementById('reportTotalBadge').textContent = `Total Yield (Filtro): ${formatBRL(totalYield)}`;
+    },
+    exportData: (format) => {
+        if (ReportEngine.filteredData.length === 0) return alert("Sem dados.");
+        const exportData = ReportEngine.filteredData.map(t => ({
+            "Data/Hora": t.dateStr,
+            "Empresa": t.company,
+            "Setor": t.sector,
+            "Região": t.region,
+            "Status": t.status,
+            "Volume Bruto (R$)": t.amount.toFixed(2),
+            "Yield Líquido (R$)": t.yield.toFixed(2)
+        }));
+        const fileName = `FinoraQi_Yield_${document.getElementById('dateStart').value}`;
+        if (format === 'csv') {
+            const headers = Object.keys(exportData[0]);
+            const csvRows = [headers.join(',')];
+            for (const row of exportData) {
+                const values = headers.map(h => `"${('' + row[h]).replace(/"/g, '\\"')}"`);
+                csvRows.push(values.join(','));
+            }
+            const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${fileName}.csv`; a.click();
+        } else {
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Yield");
+            XLSX.writeFile(wb, `${fileName}.xlsx`);
+        }
+    }
+};
+
+const FullDataView = {
+    init: () => {
+        const select = document.getElementById('filterCompany');
+        DATA_COMPANIES.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.name;
+            opt.textContent = c.name;
+            select.appendChild(opt);
+        });
+    },
+    open: () => {
+        document.getElementById('fullDataModal').classList.add('active');
+        FullDataView.render();
+    },
+    close: () => {
+        document.getElementById('fullDataModal').classList.remove('active');
+    },
+    clearFilters: () => {
+        document.getElementById('filterCompany').value = 'all';
+        document.getElementById('filterYieldMin').value = '';
+        document.getElementById('filterYieldMax').value = '';
+        FullDataView.render();
+    },
+    render: () => {
+        const tbody = document.getElementById('fullTableBody');
+        tbody.innerHTML = '';
+        
+        const companyFilter = document.getElementById('filterCompany').value;
+        const minYield = parseFloat(document.getElementById('filterYieldMin').value) || 0;
+        const maxYield = parseFloat(document.getElementById('filterYieldMax').value) || Infinity;
+
+        const filtered = STATE.transactions.filter(txn => {
+            const matchCompany = companyFilter === 'all' || txn.company === companyFilter;
+            const matchYield = txn.yield >= minYield && txn.yield <= maxYield;
+            return matchCompany && matchYield;
+        });
+
+        const sorted = filtered.sort((a, b) => b.dateObj - a.dateObj);
+        
+        sorted.forEach(txn => {
+            const formatVol = (val) => {
+                if (val > 1000000) return `R$ ${(val/1e6).toFixed(2)} mi`;
+                if (val > 1000) return `R$ ${(val/1000).toFixed(0)} k`;
+                return formatBRL(val);
+            };
+            const statusClass = txn.status === 'approved' ? 'status-approved' : (txn.status === 'declined' ? 'status-declined' : 'status-pending');
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${txn.dateStr}</td>
+                <td style="color:var(--accent-blue);">${txn.id}</td>
+                <td style="color:var(--text-primary); font-weight:600;">${txn.company}</td>
+                <td><span class="card-badge" style="background:${txn.color}20; color:${txn.color};">${txn.sector}</span></td>
+                <td>${txn.region}</td>
+                <td class="amount">${formatVol(txn.amount)}</td>
+                <td style="color:var(--accent-amber); font-weight:600;">${formatVol(txn.yield)}</td>
+                <td class="${statusClass}">${txn.status}</td>
+                <td style="color:${txn.isSuspicious ? 'var(--accent-red)' : 'var(--text-muted)'};">${(txn.riskScore * 100).toFixed(0)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('fullDataCount').textContent = `${sorted.length} registros encontrados`;
+    }
+};
+
+let map = null;
+let chartVolumeInstance = null;
+let chartMethodsInstance = null;
+let chartScoreInstance = null;
+let chartSectorYieldInstance = null;
+
+function initMap() {
+    map = L.map('worldMap', { center: [-15, -60], zoom: 2.5, zoomControl: false, attributionControl: false });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+    Object.entries(REGION_COORDS).forEach(([code, data]) => {
+        const icon = L.divIcon({
+            className: 'custom-hub',
+            html: `<div class="map-hub-dot" style="background:#22d3ee; box-shadow:0 0 12px #22d3ee;"></div><div class="map-hub-label">${data.name}</div>`,
+            iconSize: [10, 10], iconAnchor: [5, 5]
+        });
+        L.marker([data.lat, data.lng], { icon }).addTo(map).bindPopup(`<b>${data.name}</b><br>Processamento Ativo`);
+    });
+    setTimeout(() => { if (map) map.invalidateSize(); }, 400);
+}
+
+function pulseMapRegion(regionCode) {
+    if (!map || !REGION_COORDS[regionCode]) return;
+    const coords = REGION_COORDS[regionCode];
+    const pulse = L.circleMarker([coords.lat, coords.lng], { radius: 5, color: '#22d3ee', fillColor: '#22d3ee', fillOpacity: 0.5, weight: 2 }).addTo(map);
+    let r = 5;
+    const intv = setInterval(() => {
+        r += 2; pulse.setRadius(r);
+        pulse.setStyle({ opacity: Math.max(0, 1 - (r/40)) });
+        if (r > 40) { clearInterval(intv); map.removeLayer(pulse); }
+    }, 40);
+}
+
+function initCharts() {
+    // Overview: Line Chart
+    const ctxV = document.getElementById('chartVolume').getContext('2d');
+    chartVolumeInstance = new Chart(ctxV, {
+        type: 'line',
+        data: { labels: Array.from({ length: 24 }, (_, i) => `${pad(i)}:00`), datasets: [{ data: STATE.hourlyVolume, borderColor: '#22d3ee', backgroundColor: 'rgba(34, 211, 238, 0.08)', borderWidth: 2, fill: true, tension: 0.35, pointRadius: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 9 } } } } }
+    });
+
+    // Overview: Doughnut
+    const ctxM = document.getElementById('chartMethods').getContext('2d');
+    chartMethodsInstance = new Chart(ctxM, {
+        type: 'doughnut',
+        data: { labels: ['Aguardando...'], datasets: [{ data: [1], backgroundColor: ['#60a5fa'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 }, usePointStyle: true } } } }
+    });
+
+    // Score: Bar Chart
+    const ctxS = document.getElementById('chartScore').getContext('2d');
+    chartScoreInstance = new Chart(ctxS, {
+        type: 'bar',
+        data: {
+            labels: ['0-99', '100-199', '200-299', '300-399', '400-499', '500-599', '600-699', '700-799', '800-899', '900-1000'],
+            datasets: [{ label: 'Frequência de Scores', data: STATE.scoreData, backgroundColor: '#34d399', borderRadius: 4 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#64748b' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b' } } } }
+    });
+
+    // Escrow: Sector Yield Bar Chart
+    const ctxE = document.getElementById('chartSectorYield').getContext('2d');
+    chartSectorYieldInstance = new Chart(ctxE, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(STATE.sectorYields),
+            datasets: [{ label: 'Yield Acumulado (R$)', data: Object.values(STATE.sectorYields), backgroundColor: ['#3b82f6', '#f59e0b', '#34d399', '#a78bfa', '#f87171', '#22d3ee', '#818cf8', '#c084fc', '#f43f5e'], borderRadius: 6 }]
+        },
+        options: { 
+            responsive: true, maintainAspectRatio: false, 
+            plugins: { legend: { display: false } }, 
+            scales: { 
+                x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }, 
+                y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', callback: (value) => `R$ ${(value/1e6).toFixed(1)}mi` } } 
+            } 
+        }
+    });
+}
+
+function tick() {
+    const txn = generateTransaction();
+    updateMetrics(txn);
+    addToLiveTable(txn);
+    pulseMapRegion(txn.region);
+
+    if (txn.isSuspicious) {
+        addLogEntry('error', `Risco Alto: ${txn.company} · Z-Score: ${(txn.riskScore*100).toFixed(0)}`);
+    } else if (txn.status === 'approved' && Math.random() < 0.3) {
+        addLogEntry('success', `Liquidado: ${txn.company} · Yield: ${formatBRL(txn.yield)}`);
+    }
+
+    setTimeout(tick, CONFIG.tickInterval + rand(-300, 300));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setInterval(() => {
+        document.getElementById('serverClock').textContent = new Date().toISOString().substring(11, 19) + ' UTC';
+    }, 1000);
+
+    initMap();
+    initCharts();
+    LowDataEscrow.render();
+    ReportEngine.init();
+    FullDataView.init();
+
+    document.getElementById('fullDataModal').addEventListener('click', (e) => {
+        if (e.target.id === 'fullDataModal') FullDataView.close();
+    });
+
+    addLogEntry('info', 'Terminal FinoraQi inicializado.');
+    addLogEntry('info', 'Lista de 134 empresas carregada com sucesso.');
+    addLogEntry('success', 'Motor LOWDATAESC conectado e monitorando escrow.');
+    
+    setTimeout(tick, 1500);
+});
+</script>
+
+</body>
+</html>
